@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#0a0e16",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#0f172a",
+                        "on-tertiary-fixed": "#064e3b",
+                        "surface-container-high": "#334155",
+                        "outline-variant": "#1e293b",
+                        "surface": "#101622",
+                        "surface-container": "#1e293b",
+                        "tertiary": "#10b981",
+                        "primary-fixed-dim": "#bfdbfe",
+                        "on-secondary-fixed-variant": "#334155",
+                        "on-surface-variant": "#94a3b8",
+                        "surface-bright": "#1e2533",
+                        "surface-container-low": "#0f172a",
+                        "secondary-fixed-dim": "#e2e8f0",
+                        "on-surface": "#f1f5f9",
+                        "inverse-primary": "#60a5fa",
+                        "tertiary-fixed": "#d1fae5",
+                        "on-primary-fixed-variant": "#1d4ed8",
+                        "inverse-surface": "#f8fafc",
+                        "error-container": "#b91c1c1a",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#1e3a8a",
+                        "on-primary-container": "#0d59f2",
+                        "primary-container": "#0d59f21a",
+                        "tertiary-container": "#10b9811a",
+                        "background": "#101622",
+                        "surface-container-highest": "#475569",
+                        "on-tertiary-container": "#10b981",
+                        "on-error-container": "#ef4444",
+                        "error": "#ef4444",
+                        "on-secondary-fixed": "#0f172a",
+                        "secondary-container": "#1e293b",
+                        "surface-dim": "#0c111a",
+                        "secondary-fixed": "#f1f5f9",
+                        "secondary": "#334155",
+                        "primary-fixed": "#dbeafe",
+                        "surface-variant": "#0f172a",
+                        "primary": "#0d59f2",
+                        "tertiary-fixed-dim": "#a7f3d0",
+                        "outline": "#334155",
+                        "on-background": "#f8fafc",
+                        "surface-tint": "#0d59f2",
+                        "on-secondary-container": "#94a3b8",
+                        "on-secondary": "#f1f5f9",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#059669"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #101622;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl shadow-blue-900/10 shadow-2xl flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-blue-600 dark:text-blue-500" style="font-size: 24px;">security</span>
+<h1 class="font-['Inter'] font-extrabold tracking-tight text-sm font-black tracking-[0.1em] text-slate-100">COBALT FORTRESS</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="User Profile" data-alt="close-up portrait of a digital avatar silhouette with subtle neon blue highlights on a dark slate background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwsG-dQvbl6Qnyu4SUtCVEqtfpM6ukS9BrkgfHji2V3RbkEM_81UJeYs6RfhDXZSuVZ780n0UgSiObS8iNU38-R-35iwsyCVwtPbXNr9Kx5ph9LtvmZqzrJi7M-4Vu3U6cwA9AxXqnfrn7OhkNiXBb9_lgzJO_Mq5HIXX91s2XzooQAn7guihBgKwweUmDIGEn1GjnJB9-e3-92YZ61zVm3DD8dOnpRsIvVoMB4_GU8Z-iHD5KLM6JhK312NYYXEFca6oh_YTF8zZ3"/>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Hero Section: Active State -->
+<section class="relative p-8 rounded-3xl bg-surface-container-low border border-outline-variant overflow-hidden">
+<div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/10 blur-[80px] rounded-full"></div>
+<div class="relative z-10">
+<span class="text-[10px] font-bold tracking-[0.2em] text-primary uppercase">Status Sistem</span>
+<h2 class="text-3xl font-extrabold mt-2 tracking-tight">PENGATURAN</h2>
+<p class="text-on-surface-variant text-sm mt-2 max-w-[280px]">Konfigurasi protokol keamanan dan parameter matematis unit pertahanan Anda.</p>
+</div>
+</section>
+<!-- Difficulty Settings (Bento Style) -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase">Tingkat Kesulitan Matematika</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">functions</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- SD Level -->
+<div class="group p-5 rounded-2xl bg-surface-container-low border border-outline-variant hover:bg-slate-800 transition-colors cursor-pointer">
+<span class="text-[10px] font-bold tracking-[0.1em] text-on-surface-variant">LEVEL 01</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-xl font-extrabold text-on-surface">SD</span>
+<span class="text-[10px] text-tertiary font-bold tracking-widest">DASAR</span>
+</div>
+<div class="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-1/3 shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+</div>
+</div>
+<!-- SMP Level -->
+<div class="group p-5 rounded-2xl bg-surface-container border-2 border-primary ring-4 ring-primary/5 cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold tracking-[0.1em] text-primary">LEVEL 02</span>
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-xl font-extrabold text-on-surface">SMP</span>
+<span class="text-[10px] text-primary font-bold tracking-widest">AKTIF</span>
+</div>
+<div class="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-2/3 shadow-[0_0_10px_rgba(13,89,242,0.3)]"></div>
+</div>
+</div>
+<!-- SMA Level -->
+<div class="group p-5 rounded-2xl bg-surface-container-low border border-outline-variant hover:bg-slate-800 transition-colors cursor-pointer">
+<span class="text-[10px] font-bold tracking-[0.1em] text-on-surface-variant">LEVEL 03</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-xl font-extrabold text-on-surface">SMA</span>
+<span class="text-[10px] text-error font-bold tracking-widest">LANJUT</span>
+</div>
+<div class="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error w-full shadow-[0_0_10px_rgba(239,68,68,0.3)]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Security Protocols -->
+<section class="space-y-4">
+<h3 class="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase">Protokol Keamanan</h3>
+<div class="bg-surface-container-low border border-outline-variant rounded-3xl overflow-hidden divide-y divide-outline-variant">
+<!-- Fingerprint -->
+<div class="p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">fingerprint</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface tracking-tight">SIDIK JARI</p>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">BIOMETRIC AUTHENTICATION</p>
+</div>
+</div>
+<div class="w-10 h-5 bg-primary rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<!-- Backup Method -->
+<div class="p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">admin_panel_settings</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface tracking-tight">METODE CADANGAN</p>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">ENCRYPTED RECOVERY PIN</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- General / System -->
+<section class="space-y-4">
+<h3 class="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase">Sistem &amp; Umum</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-5 bg-surface-container-low border border-outline-variant rounded-2xl flex flex-col gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+<div>
+<p class="text-sm font-bold text-on-surface tracking-tight">TEMA GELAP</p>
+<p class="text-[10px] text-tertiary font-bold tracking-widest mt-1">AKTIF</p>
+</div>
+</div>
+<div class="p-5 bg-surface-container-low border border-outline-variant rounded-2xl flex flex-col gap-4 cursor-pointer hover:bg-slate-800/50 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">info</span>
+<div>
+<p class="text-sm font-bold text-on-surface tracking-tight">TENTANG</p>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide mt-1">VERSION 2.4.0-COBALT</p>
+</div>
+</div>
+<div class="col-span-2 p-5 bg-surface-container-low border border-outline-variant rounded-2xl flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">help_center</span>
+<p class="text-sm font-bold text-on-surface tracking-tight uppercase">BANTUAN &amp; DUKUNGAN</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_outward</span>
+</div>
+</div>
+</section>
+<!-- Legal / Footer -->
+<footer class="py-8 flex flex-col items-center gap-4 opacity-50">
+<div class="h-[1px] w-12 bg-outline-variant"></div>
+<p class="text-[10px] font-bold tracking-[0.3em] uppercase">Secured by Cobalt Engineering</p>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full bg-slate-900/80 backdrop-blur-xl shadow-[0_-4px_20px_rgba(13,89,242,0.05)] z-50 flex justify-around items-center px-4 py-3 pb-safe">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">BERANDA</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">RIWAYAT</span>
+</a>
+<!-- Stats -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">STATISTIK</span>
+</a>
+<!-- Settings (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-blue-500 bg-blue-500/10 rounded-2xl p-2 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">PENGATURAN</span>
+</a>
+</nav>
+</body></html>

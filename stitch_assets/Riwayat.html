@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container-lowest": "#0a0e16",
+                "on-primary": "#ffffff",
+                "inverse-on-surface": "#0f172a",
+                "on-tertiary-fixed": "#064e3b",
+                "surface-container-high": "#334155",
+                "outline-variant": "#1e293b",
+                "surface": "#101622",
+                "surface-container": "#1e293b",
+                "tertiary": "#10b981",
+                "primary-fixed-dim": "#bfdbfe",
+                "on-secondary-fixed-variant": "#334155",
+                "on-surface-variant": "#94a3b8",
+                "surface-bright": "#1e2533",
+                "surface-container-low": "#0f172a",
+                "secondary-fixed-dim": "#e2e8f0",
+                "on-surface": "#f1f5f9",
+                "inverse-primary": "#60a5fa",
+                "tertiary-fixed": "#d1fae5",
+                "on-primary-fixed-variant": "#1d4ed8",
+                "inverse-surface": "#f8fafc",
+                "error-container": "#b91c1c1a",
+                "on-error": "#ffffff",
+                "on-primary-fixed": "#1e3a8a",
+                "on-primary-container": "#0d59f2",
+                "primary-container": "#0d59f21a",
+                "tertiary-container": "#10b9811a",
+                "background": "#101622",
+                "surface-container-highest": "#475569",
+                "on-tertiary-container": "#10b981",
+                "on-error-container": "#ef4444",
+                "error": "#ef4444",
+                "on-secondary-fixed": "#0f172a",
+                "secondary-container": "#1e293b",
+                "surface-dim": "#0c111a",
+                "secondary-fixed": "#f1f5f9",
+                "secondary": "#334155",
+                "primary-fixed": "#dbeafe",
+                "surface-variant": "#0f172a",
+                "primary": "#0d59f2",
+                "tertiary-fixed-dim": "#a7f3d0",
+                "outline": "#334155",
+                "on-background": "#f8fafc",
+                "surface-tint": "#0d59f2",
+                "on-secondary-container": "#94a3b8",
+                "on-secondary": "#f1f5f9",
+                "on-tertiary": "#ffffff",
+                "on-tertiary-fixed-variant": "#059669"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "2xl": "1rem",
+                "3xl": "1.5rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glow-cobalt {
+            box-shadow: 0 0 20px rgba(13, 89, 242, 0.15);
+        }
+        .status-glow-success {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        .status-glow-error {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl shadow-blue-900/10 shadow-2xl flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-blue-600 dark:text-blue-500 text-2xl" data-icon="security">security</span>
+<h1 class="text-sm font-black tracking-[0.1em] text-slate-100 font-headline uppercase">COBALT FORTRESS</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center overflow-hidden active:scale-95 duration-200 cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="professional male user avatar with neutral expression in high quality digital rendering" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhN7F4YscBtvGM023VEhj9ybRqvQJfY56sfQFUeWVoEuO52ZEJSgrWx0Xdqw3ZUNNJfE9hacxhwgQUOBI_85GvIurGivrs-fHp9k2bWdofvikbXQMWRkQIKyQ6jajWM2iG_AZRJ0y7Ef2yUAJFeIPvspT-Cdl42pY3Xx60ZJD6TS2a_U9LD_fqtJrXghe_MiGQ-ds7XVoY0thc8R429ox6WbmigeKkxKURdVBVr4OBB-6LitQGC5rRZbDnlWfESf0_rKLaCr5HXzhL"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Security Insight Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-surface-container p-6 border border-outline-variant glow-cobalt">
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="material-symbols-outlined text-8xl" data-icon="shield_lock">shield_lock</span>
+</div>
+<div class="relative z-10">
+<span class="text-[10px] font-medium tracking-[0.1em] text-tertiary uppercase block mb-2">SECURITY INSIGHT</span>
+<h2 class="text-2xl font-extrabold tracking-tight mb-4">Integritas Sistem Optimal</h2>
+<div class="flex items-center gap-4">
+<div class="flex-1">
+<div class="h-1 w-full bg-slate-800 rounded-full mb-2">
+<div class="h-full w-4/5 bg-tertiary rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+</div>
+<p class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase">TINGKAT KEBERHASILAN: 82%</p>
+</div>
+<div class="bg-tertiary-container px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-[10px] font-bold text-tertiary uppercase">AMAN</span>
+</div>
+</div>
+</div>
+</section>
+<!-- History Log Section -->
+<section class="space-y-6">
+<div class="flex justify-between items-end">
+<h3 class="text-lg font-extrabold tracking-tight text-on-surface uppercase">Log Aktivitas</h3>
+<span class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase">TERBARU — 24 JAM TERAKHIR</span>
+</div>
+<!-- Log Entries: Bento Grid Style -->
+<div class="grid gap-4">
+<!-- Entry 1: WhatsApp Success -->
+<div class="group bg-surface-container-low p-4 rounded-2xl border border-outline-variant hover:bg-slate-800 transition-colors duration-200">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-on-surface group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-2xl" data-icon="chat">chat</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface tracking-tight">WhatsApp</h4>
+<p class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase">14:22 • PERANGKAT UTAMA</p>
+</div>
+</div>
+<div class="bg-tertiary-container px-3 py-1.5 rounded-lg status-glow-success">
+<span class="text-[10px] font-bold text-tertiary uppercase">Selesai/Berhasil</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30 flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-widest">Matematika</span>
+<span class="text-sm font-extrabold text-on-surface tracking-tighter">√(144) + 15 × 2 = <span class="text-primary">42</span></span>
+</div>
+</div>
+<!-- Entry 2: Mobile Banking Failed -->
+<div class="group bg-surface-container-low p-4 rounded-2xl border border-outline-variant hover:bg-slate-800 transition-colors duration-200">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-on-surface group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-2xl" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface tracking-tight">Mobile Banking</h4>
+<p class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase">12:05 • LOKASI TIDAK DIKENAL</p>
+</div>
+</div>
+<div class="bg-error-container px-3 py-1.5 rounded-lg status-glow-error">
+<span class="text-[10px] font-bold text-error uppercase">Salah Input</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30 flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-widest">Matematika</span>
+<span class="text-sm font-extrabold text-on-surface tracking-tighter">23² - 128 = <span class="text-error">401</span></span>
+</div>
+</div>
+<!-- Entry 3: Gmail Success -->
+<div class="group bg-surface-container-low p-4 rounded-2xl border border-outline-variant hover:bg-slate-800 transition-colors duration-200">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-on-surface group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-2xl" data-icon="mail">mail</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface tracking-tight">Gmail</h4>
+<p class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase">09:15 • PERANGKAT UTAMA</p>
+</div>
+</div>
+<div class="bg-tertiary-container px-3 py-1.5 rounded-lg status-glow-success">
+<span class="text-[10px] font-bold text-tertiary uppercase">Selesai/Berhasil</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30 flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-widest">Matematika</span>
+<span class="text-sm font-extrabold text-on-surface tracking-tighter">75 / 5 + 88 = <span class="text-primary">103</span></span>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Audit Stats -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
+<span class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase block mb-1">TOTAL AKSES</span>
+<span class="text-3xl font-extrabold text-primary tracking-tighter">1,284</span>
+</div>
+<div class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
+<span class="text-[10px] font-medium tracking-[0.1em] text-on-surface-variant uppercase block mb-1">DIBLOKIR</span>
+<span class="text-3xl font-extrabold text-error tracking-tighter">12</span>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl shadow-[0_-4px_20px_rgba(13,89,242,0.05)] flex justify-around items-center px-4 py-3 pb-safe">
+<button class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined text-2xl" data-icon="home">home</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">BERANDA</span>
+</button>
+<button class="flex flex-col items-center justify-center text-blue-500 bg-blue-500/10 rounded-2xl p-2 active:scale-90 duration-150">
+<span class="material-symbols-outlined text-2xl" data-icon="history" data-weight="fill" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">RIWAYAT</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined text-2xl" data-icon="bar_chart">bar_chart</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">STATISTIK</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-400 transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined text-2xl" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-[0.1em] mt-1">PENGATURAN</span>
+</button>
+</nav>
+</body></html>

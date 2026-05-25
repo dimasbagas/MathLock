@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {},
+            borderRadius: {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px"
+            },
+            fontFamily: {
+              "headline": ["Public Sans", "sans-serif"],
+              "body": ["Public Sans", "sans-serif"],
+              "label": ["Public Sans", "sans-serif"],
+              "mono": ["JetBrains Mono", "monospace"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+      }
+      .neon-glow {
+        box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+      }
+      .glass-card {
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+    </style>
+<style>
+      body {
+        min-height: 100dvh;
+      }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-body antialiased min-h-screen flex flex-col overflow-hidden relative">
+<!-- Background Abstract Graphic -->
+<div class="absolute inset-0 z-0 pointer-events-none opacity-20">
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/30 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/40 blur-[120px] rounded-full"></div>
+</div>
+<!-- Main Content: Full Screen Lock Overlay -->
+<main class="relative z-10 flex-grow flex flex-col items-center justify-center px-6 py-12">
+<div class="w-full max-w-md flex flex-col items-center">
+<!-- Branding Header (Integrated into content) -->
+<div class="flex items-center gap-3 mb-10 opacity-80">
+<span class="material-symbols-outlined text-blue-500" data-icon="security">security</span>
+<h1 class="font-mono uppercase tracking-widest text-sm font-black text-blue-400">COBALT FORTRESS</h1>
+</div>
+<!-- App to Unlock -->
+<div class="mb-8 relative">
+<div class="w-20 h-20 rounded-3xl bg-slate-900 flex items-center justify-center border border-blue-500/30 p-4 shadow-2xl">
+<img class="w-full h-full object-contain rounded-xl" data-alt="vibrant colorful social media app logo icon with high gloss finish and soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5MoIp3MEKtb6J6qtJov8-4gLNrmW0iMwZKjAhS2ybJk-cXBEDu9XzZdqOlrjKQP9HP6czDojP_UpKW14_RtHOaHZDFaq1ak3BNFgJaIkM2aqyt7m9ALlzLoPlvhDy_bwbfpRxzzPWjcKA2UGJg8Kr8BwQ3naaKcZ3oCoTKTszxzSZbt7doepk14Dm4IBFJjK0scsUQcU5ihLaI-ra-rV8Wz6jS4UlZE-vJkh_fITav6vILrue-9gJXx6UNP7pqIaIMtaKHGdo9mqt"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-lg">
+<span class="material-symbols-outlined text-[16px] text-white" data-icon="lock">lock</span>
+</div>
+</div>
+<!-- Instruction Text -->
+<div class="text-center mb-8">
+<p class="text-blue-400 font-mono text-sm uppercase tracking-widest mb-2">Security Verification</p>
+<h2 class="text-2xl font-bold text-white tracking-tight">Selesaikan soal untuk membuka aplikasi</h2>
+</div>
+<!-- Mathematical Equation Card -->
+<div class="glass-card w-full p-8 rounded-[2rem] flex flex-col items-center mb-8 shadow-2xl">
+<div class="flex items-center justify-center gap-6 mb-8">
+<span class="text-4xl md:text-5xl font-black text-white font-mono tracking-tighter">15 × 12 + 45</span>
+</div>
+<!-- Input Display -->
+<div class="w-full bg-slate-900/80 border-2 border-blue-500/50 rounded-2xl p-5 flex items-center justify-center h-20 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
+<span class="text-3xl font-mono font-bold text-blue-400 tracking-[0.5em] flex items-center">
+                        22<span class="w-1 h-8 bg-blue-500 ml-1 animate-pulse"></span>
+</span>
+</div>
+</div>
+<!-- Custom Number Pad Grid -->
+<div class="grid grid-cols-3 gap-4 w-full max-w-sm mb-10">
+<!-- Numbers 1-9 -->
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">1</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">2</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">3</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">4</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">5</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">6</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">7</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">8</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">9</button>
+<button class="h-16 flex items-center justify-center rounded-2xl text-slate-500 hover:text-blue-400 transition-colors">
+<span class="material-symbols-outlined text-3xl" data-icon="backspace">backspace</span>
+</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-slate-900/60 border border-slate-800 text-2xl font-bold text-slate-300 hover:bg-blue-600/20 hover:border-blue-500/50 hover:text-white transition-all active:scale-95">0</button>
+<button class="h-16 flex items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 hover:bg-blue-500 transition-colors">
+<span class="material-symbols-outlined text-3xl" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+<!-- Footer Action -->
+<button class="flex items-center gap-2 text-slate-500 font-semibold text-sm py-2 px-6 rounded-full border border-slate-800 hover:bg-slate-900 transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="emergency">emergency</span>
+                PANGGILAN DARURAT
+            </button>
+</div>
+</main>
+</body></html>
