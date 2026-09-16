@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'math_lock_screen.dart';
+import '../state/app_state.dart';
 
 /// Flutter screen rendered inside [LockActivity].
 ///
@@ -9,7 +10,8 @@ import 'math_lock_screen.dart';
 /// [MathLockScreen].  The only way to dismiss this screen is by solving the
 /// math challenge correctly — [onDismiss] is intentionally `null`.
 class LockRouteScreen extends StatefulWidget {
-  const LockRouteScreen({super.key});
+  final AppState appState;
+  const LockRouteScreen({super.key, required this.appState});
 
   @override
   State<LockRouteScreen> createState() => _LockRouteScreenState();
@@ -52,15 +54,16 @@ class _LockRouteScreenState extends State<LockRouteScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF060C17),
-        body: Center(
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
           child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
         ),
       );
     }
 
     return MathLockScreen(
+      appState:        widget.appState,
       appName:         _appName,
       appIcon:         Icons.shield_rounded,
       appColor:        const Color(0xFF3B82F6),

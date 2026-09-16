@@ -1,6 +1,7 @@
-package com.example.mathlockv2
+package com.danibaret014.mathlock
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -44,6 +45,15 @@ class MathChallengeActivity : FlutterActivity() {
                     }
                     "dismissLock" -> {
                         prefs.edit().putBoolean("is_unlocked", true).apply()
+                        finish()
+                        result.success(null)
+                    }
+                    "exitToHome" -> {
+                        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_HOME)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        startActivity(homeIntent)
                         finish()
                         result.success(null)
                     }

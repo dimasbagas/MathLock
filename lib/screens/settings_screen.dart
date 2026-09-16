@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../widgets/glow_container.dart';
+import '../widgets/premium_upgrade_sheet.dart';
+import '../services/supabase_service.dart';
+import '../services/database_service.dart';
+import 'auth_wrapper.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AppState appState;
@@ -12,6 +17,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final AuthService _authService = AuthService();
+  bool _isSyncing = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -23,39 +31,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: theme.textTheme.labelLarge?.copyWith(
             letterSpacing: 2.0,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFFf1f5f9),
+            color: theme.colorScheme.onSurface,
           ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
 
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHero(context),
-            const SizedBox(height: 32),
-            _buildDifficultySection(context),
-            const SizedBox(height: 32),
-            _buildGeneralSection(context),
-            const SizedBox(height: 48),
-            Center(
-              child: Opacity(
-                opacity: 0.5,
-                child: Column(
-                  children: [
-                    Container(height: 1, width: 48, color: theme.colorScheme.outlineVariant),
-                    const SizedBox(height: 16),
-                    Text('SECURED BY COBALT ENGINEERING', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 3.0, fontWeight: FontWeight.bold)),
-                  ],
+      body: ListenableBuilder(
+        listenable: widget.appState,
+        builder: (context, _) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHero(context),
+                const SizedBox(height: 24),
+                _buildPremiumStatusCard(context),
+                const SizedBox(height: 24),
+                _buildDifficultySection(context),
+                const SizedBox(height: 24),
+                _buildGeneralSection(context),
+                const SizedBox(height: 24),
+                _buildAccountSection(context),
+                const SizedBox(height: 48),
+                Center(
+                  child: Opacity(
+                    opacity: 0.5,
+                    child: Column(
+                      children: [
+                        Container(height: 1, width: 48, color: theme.colorScheme.outlineVariant),
+                        const SizedBox(height: 16),
+                        Text('SECURED BY COBALT ENGINEERING', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 3.0, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 100),
+              ],
             ),
-            const SizedBox(height: 100),
-          ],
-        ),
+          );
+        }
       ),
     );
   }
@@ -65,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -113,13 +130,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
         ListenableBuilder(
           listenable: widget.appState,
-          builder: (context, _) => Row(
+          builder: (context, _) => Column(
             children: [
-              Expanded(child: _buildDifficultyCard(context, 'LEVEL 01', 'SD',  'DASAR', theme.colorScheme.tertiary, 0.33, 0)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildDifficultyCard(context, 'LEVEL 02', 'SMP', 'AKTIF', theme.colorScheme.primary, 0.66, 1)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildDifficultyCard(context, 'LEVEL 03', 'SMA', 'LANJUT', theme.colorScheme.error, 1.0, 2)),
+              Row(
+                children: [
+                  Expanded(child: _buildDifficultyCard(context, 'LEVEL 01', 'SD',  'DASAR', theme.colorScheme.tertiary, 0.25, 0)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildDifficultyCard(context, 'LEVEL 02', 'SMP', 'AKTIF', theme.colorScheme.primary, 0.50, 1)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: _buildDifficultyCard(context, 'LEVEL 03', 'SMA', 'LANJUT', theme.colorScheme.error, 0.75, 2)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildDifficultyCard(context, 'LEVEL 04', 'PT',  'PAKAR', const Color(0xFFa855f7), 1.0, 3)),
+                ],
+              ),
             ],
           ),
         ),
@@ -136,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isActive ? theme.colorScheme.secondary : const Color(0xFF0f172a),
+          color: isActive ? theme.colorScheme.secondary : theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: isActive ? mainColor : theme.colorScheme.outlineVariant, width: isActive ? 2 : 1),
           boxShadow: isActive ? [BoxShadow(color: mainColor.withValues(alpha: 0.15), spreadRadius: 2, blurRadius: 12)] : null,
@@ -178,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               height: 4,
               width: double.infinity,
-              decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(2)),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(
@@ -208,24 +235,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
         Row(
           children: [
-            // Dark Mode card (cosmetic — always on)
+            // Theme Mode Toggle card
             Expanded(
-              child: GlowContainer(
-                glowType: GlowType.tertiary,
-                backgroundColor: const Color(0xFF0f172a),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.dark_mode, color: theme.colorScheme.tertiary),
-                    const SizedBox(height: 16),
-                    Text('TEMA GELAP', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text('AKTIF', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.tertiary, fontSize: 10, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              child: ListenableBuilder(
+                listenable: widget.appState,
+                builder: (context, _) {
+                  final isDark = widget.appState.isDarkTheme;
+                  return InkWell(
+                    onTap: () => widget.appState.toggleTheme(),
+                    borderRadius: BorderRadius.circular(16),
+                    child: GlowContainer(
+                      glowType: isDark ? GlowType.tertiary : GlowType.primary,
+                      backgroundColor: theme.cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary),
+                          const SizedBox(height: 16),
+                          Text(isDark ? 'TEMA GELAP' : 'TEMA CERAH', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('AKTIF', style: theme.textTheme.labelSmall?.copyWith(color: isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary, fontSize: 10, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
               ),
             ),
             const SizedBox(width: 16),
@@ -237,7 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0f172a),
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
@@ -263,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF0f172a),
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
@@ -280,6 +317,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Icon(Icons.privacy_tip_outlined, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 16),
+                  Text('KEBIJAKAN PRIVASI', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                ]),
+                Icon(Icons.arrow_forward_ios_rounded, color: theme.colorScheme.onSurfaceVariant, size: 14),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -290,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0f172a),
+        backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: theme.colorScheme.outlineVariant)),
         title: Row(children: [
           Icon(Icons.security, color: theme.colorScheme.primary, size: 22),
@@ -343,7 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0f172a),
+        backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: theme.colorScheme.outlineVariant)),
         title: Row(children: [
           Icon(Icons.support_agent_rounded, color: theme.colorScheme.primary, size: 22),
@@ -385,6 +450,149 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildPremiumStatusCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final appState = widget.appState;
+    final isPremium = appState.isPremium;
+
+    if (!isPremium) {
+      return GlowContainer(
+        glowType: GlowType.primary,
+        backgroundColor: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.workspace_premium_rounded, color: theme.colorScheme.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'COBALT PREMIUM',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Kunci aplikasi tak terbatas & nikmati pengalaman 100% bebas iklan.',
+                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => PremiumUpgradeSheet(appState: appState),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('UPGRADE', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tampilan jika premium aktif
+    String expiryText = 'Selamanya (Lifetime)';
+    if (appState.premiumExpiry > 0) {
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(appState.premiumExpiry);
+      expiryText = 'Aktif s/d ${expiryDate.day}/${expiryDate.month}/${expiryDate.year}';
+    }
+
+    return GlowContainer(
+      glowType: GlowType.tertiary,
+      backgroundColor: theme.cardColor,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: theme.colorScheme.tertiary.withValues(alpha: 0.3)),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.stars_rounded, color: theme.colorScheme.tertiary, size: 24),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'COBALT PREMIUM AKTIF 👑',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.tertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Terima kasih telah berlangganan premium. Semua fitur bebas kunci dan tanpa iklan aktif sepenuhnya.',
+            style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                expiryText,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.tertiary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+              // Tombol pengembang untuk reset ke Free
+              GestureDetector(
+                onTap: () async {
+                  await appState.cancelPremium();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Status Premium dinonaktifkan (Mode Pengembang)'),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'RESET KE FREE',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 8,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _tipRow(BuildContext context, String num, String text) {
     final theme = Theme.of(context);
     return Row(
@@ -395,5 +603,213 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Expanded(child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
       ],
     );
+  }
+
+  Widget _buildAccountSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final user = _authService.currentUser;
+    final email = user?.email ?? 'Tidak terhubung';
+    final fullName = user?.userMetadata?['full_name'] ?? 'Pengguna MathLock';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'AKUN & SINKRONISASI',
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            letterSpacing: 2.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    radius: 22,
+                    child: Icon(Icons.person, color: theme.colorScheme.primary, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fullName,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isSyncing ? null : _handleSync,
+                      icon: _isSyncing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.sync, size: 16),
+                      label: Text(
+                        _isSyncing ? 'MENYINKRONKAN...' : 'SINKRONISASI SEKARANG',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _handleLogout,
+                      icon: const Icon(Icons.logout, size: 16),
+                      label: const Text(
+                        'KELUAR AKUN',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                        side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleSync() async {
+    setState(() {
+      _isSyncing = true;
+    });
+
+    try {
+      final appState = widget.appState;
+      final lockedPackages = appState.apps
+          .where((a) => a.isLocked)
+          .map((a) => a.packageName)
+          .toList();
+
+      // 1. Sync settings to Supabase
+      await _authService.syncSettings(
+        masterLockEnabled: appState.masterLockEnabled,
+        difficultyLevel: appState.difficultyLevel,
+        biometricEnabled: appState.biometricEnabled,
+        isDarkTheme: appState.isDarkTheme,
+        isPremium: appState.isPremium,
+        premiumExpiry: appState.premiumExpiry,
+        lockedPackages: lockedPackages,
+      );
+
+      // 2. Sync local SQLite database events (hanya data baru yang belum tersinkronisasi)
+      final dbService = DatabaseService();
+      final localEvents = await dbService.getUnsyncedEvents();
+      if (localEvents.isNotEmpty) {
+        await _authService.syncUnlockEvents(localEvents);
+        final eventIds = localEvents.map((e) => e.id).whereType<int>().toList();
+        await dbService.markEventsAsSynced(eventIds);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sinkronisasi data berhasil'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Sync failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyinkronkan data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await _authService.signOut();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Berhasil keluar akun.'),
+          ),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => AuthWrapper(appState: widget.appState)),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal keluar akun: $e'),
+          ),
+        );
+      }
+    }
   }
 }

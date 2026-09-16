@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../widgets/glow_container.dart';
 import '../state/app_state.dart';
 import '../services/database_service.dart';
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0f172a).withValues(alpha: 0.8),
+        backgroundColor: theme.cardColor.withValues(alpha: 0.8),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         flexibleSpace: ClipRRect(
@@ -68,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: theme.textTheme.labelLarge?.copyWith(
                 letterSpacing: 2.0,
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFFf1f5f9),
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -208,10 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           '$lockedCount',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: isActive ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                            fontSize: 36,
-                            height: 1,
+                          style: GoogleFonts.jetBrainsMono(
+                            textStyle: theme.textTheme.headlineLarge?.copyWith(
+                              color: isActive ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                              fontSize: 36,
+                              height: 1,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -228,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ElevatedButton(
                       onPressed: widget.onManageVault,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1e293b),
+                        backgroundColor: theme.colorScheme.secondary,
                         foregroundColor: theme.colorScheme.onSurface,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -302,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -317,7 +320,14 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(avgStr, style: theme.textTheme.headlineLarge?.copyWith(fontSize: 36)),
+              Text(
+                avgStr,
+                style: GoogleFonts.jetBrainsMono(
+                  textStyle: theme.textTheme.headlineLarge?.copyWith(
+                    fontSize: 36,
+                  ),
+                ),
+              ),
               if (_avgSolveSec > 0) ...[const SizedBox(width: 4), Text('SEC', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold))],
             ],
           ),
@@ -351,12 +361,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final label = AppState.complexityLabels[lvl];
     final subtitle = AppState.complexitySubtitles[lvl];
     final progress = AppState.complexityProgress[lvl];
-    final color = [theme.colorScheme.tertiary, theme.colorScheme.primary, theme.colorScheme.error][lvl];
+    final color = [theme.colorScheme.tertiary, theme.colorScheme.primary, theme.colorScheme.error, const Color(0xFFa855f7)][lvl];
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -408,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -444,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -466,7 +476,15 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(event.appName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(timeLabel, style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 1.0)),
+                Text(
+                  timeLabel,
+                  style: GoogleFonts.jetBrainsMono(
+                    textStyle: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
               ],
             ),
           ]),

@@ -1,4 +1,4 @@
-package com.example.mathlockv2
+package com.danibaret014.mathlock
 
 import android.app.AppOpsManager
 import android.content.Context
@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,6 +15,27 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "com.example.mathlockv2/applock"
+        var isActivityActive = false
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        isActivityActive = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isActivityActive = true
+    }
+
+    override fun onPause() {
+        isActivityActive = false
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        isActivityActive = false
+        super.onDestroy()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

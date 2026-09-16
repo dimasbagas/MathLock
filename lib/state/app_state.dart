@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:installed_apps/installed_apps.dart';
+import '../config/app_config.dart';
 import '../services/app_lock_native_service.dart';
 import '../services/preferences_service.dart';
 import '../services/database_service.dart';
+import '../services/ad_service.dart';
+import '../services/supabase_service.dart';
 
 class AppItem {
   final String    name;
@@ -21,8 +24,11 @@ class AppItem {
 
 class AppState extends ChangeNotifier {
   bool   _masterLockEnabled = true;
-  int    _difficultyLevel   = 1; // 0=SD, 1=SMP, 2=SMA
+  int    _difficultyLevel   = 1; // 0=SD, 1=SMP, 2=SMA, 3=PT
   bool   _biometricEnabled  = true;
+  bool   _isDarkTheme       = true;
+  bool   _isPremium         = false;
+  int    _premiumExpiry     = 0; // 0 = lifetime / no expiry
 
   final AppLockNativeService  nativeService  = AppLockNativeService();
   final PreferencesService    _prefs         = PreferencesService();
@@ -43,6 +49,17 @@ class AppState extends ChangeNotifier {
     _masterLockEnabled = await _prefs.getMasterLock();
     _difficultyLevel   = await _prefs.getDifficulty();
     _biometricEnabled  = await _prefs.getBiometric();
+    _isDarkTheme       = await _prefs.getDarkTheme();
+    _isPremium         = await _prefs.getPremiumStatus();
+    _premiumExpiry     = await _prefs.getPremiumExpiry();
+
+    // Check expiry
+    if (_isPremium && _premiumExpiry > 0 && DateTime.now().millisecondsSinceEpoch > _premiumExpiry) {
+      _isPremium = false;
+      await _prefs.setPremiumStatus(false);
+    }
+
+    AdService.instance.updatePremiumStatus(_isPremium);
     _initialized       = true;
     notifyListeners();
 
@@ -72,6 +89,8 @@ class AppState extends ChangeNotifier {
       }).toList();
 
       apps.sort((a, b) => a.name.compareTo(b.name));
+
+      await _enforceFreeLimit();
     } catch (e) {
       debugPrint('Failed to load apps: $e');
     } finally {
@@ -85,7 +104,11 @@ class AppState extends ChangeNotifier {
   bool get masterLockEnabled => _masterLockEnabled;
   int  get difficultyLevel   => _difficultyLevel;
   bool get biometricEnabled  => _biometricEnabled;
+  bool get isDarkTheme       => _isDarkTheme;
   bool get initialized       => _initialized;
+  bool get isPremium         => !AppConfig.enablePremiumRestrictions || _isPremium;
+  int  get premiumExpiry     => _premiumExpiry;
+  int  get actualLockedCount => apps.where((a) => a.isLocked).length;
 
   int get lockedCount =>
       _masterLockEnabled ? apps.where((a) => a.isLocked).length : 0;
@@ -93,11 +116,45 @@ class AppState extends ChangeNotifier {
       _masterLockEnabled ? apps.where((a) => !a.isLocked).length : apps.length;
 
   // Difficulty helpers
-  static const List<String> difficultyLabels    = ['SD',              'SMP',            'SMA'];
-  static const List<String> difficultyNames     = ['DASAR',           'AKTIF',          'LANJUT'];
-  static const List<String> complexityLabels    = ['BAS',             'ADV',            'EXP'];
-  static const List<String> complexitySubtitles = ['ELEMENTARY LEVEL','CALCULUS-READY', 'EXPERT MODE'];
-  static const List<double> complexityProgress  = [0.33,              0.66,             1.0];
+  static const List<String> difficultyLabels    = ['SD',              'SMP',            'SMA',            'PT'];
+  static const List<String> difficultyNames     = ['DASAR',           'AKTIF',          'LANJUT',         'PAKAR'];
+  static const List<String> complexityLabels    = ['BAS',             'MID',            'ADV',            'EXP'];
+  static const List<String> complexitySubtitles = ['ELEMENTARY LEVEL','INTERMEDIATE LEVEL','CALCULUS-READY','EXPERT MODE'];
+  static const List<double> complexityProgress  = [0.25,              0.5,              0.75,             1.0];
+
+  void _checkPremiumExpiry() {
+    if (_isPremium && _premiumExpiry > 0 && DateTime.now().millisecondsSinceEpoch > _premiumExpiry) {
+      _isPremium = false;
+      _premiumExpiry = 0;
+      _prefs.setPremiumStatus(false);
+      _prefs.setPremiumExpiry(0);
+      AdService.instance.updatePremiumStatus(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _enforceFreeLimit() async {
+    if (isPremium) return;
+    int count = 0;
+    bool changed = false;
+    for (var app in apps) {
+      if (app.isLocked) {
+        count++;
+        if (count > 2) {
+          app.isLocked = false;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      final lockedPackages = apps
+          .where((a) => a.isLocked)
+          .map((a) => a.packageName)
+          .toSet();
+      await _prefs.setLockedPackages(lockedPackages);
+      if (_masterLockEnabled) _pushLockedAppsToNative();
+    }
+  }
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -107,7 +164,7 @@ class AppState extends ChangeNotifier {
   void setMasterLock(bool value) {
     _masterLockEnabled = value;
     _prefs.setMasterLock(value);
-    if (value) {
+    if (value && AppConfig.enableAppLock) {
       nativeService.startService();
       _pushLockedAppsToNative();
     } else {
@@ -116,7 +173,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleApp(AppItem app) {
+  bool toggleApp(AppItem app) {
+    _checkPremiumExpiry();
+    if (!app.isLocked && !isPremium && actualLockedCount >= 2) {
+      return false; // Limit reached for free users
+    }
     app.isLocked = !app.isLocked;
     // Simpan state per-app ke Flutter SharedPrefs
     final lockedPackages = apps
@@ -126,10 +187,37 @@ class AppState extends ChangeNotifier {
     _prefs.setLockedPackages(lockedPackages);
     if (_masterLockEnabled) _pushLockedAppsToNative();
     notifyListeners();
+    return true;
+  }
+
+  Future<void> upgradeToPremium(int months) async {
+    _isPremium = true;
+    if (months > 0) {
+      final expiry = DateTime.now().add(Duration(days: months * 30)).millisecondsSinceEpoch;
+      _premiumExpiry = expiry;
+      await _prefs.setPremiumExpiry(expiry);
+    } else {
+      _premiumExpiry = 0; // Lifetime
+      await _prefs.setPremiumExpiry(0);
+    }
+    await _prefs.setPremiumStatus(true);
+    AdService.instance.updatePremiumStatus(true);
+    notifyListeners();
+  }
+
+  Future<void> cancelPremium() async {
+    _isPremium = false;
+    _premiumExpiry = 0;
+    await _prefs.setPremiumStatus(false);
+    await _prefs.setPremiumExpiry(0);
+    AdService.instance.updatePremiumStatus(false);
+    
+    await _enforceFreeLimit();
+    notifyListeners();
   }
 
   void setDifficulty(int level) {
-    assert(level >= 0 && level <= 2);
+    assert(level >= 0 && level <= 3);
     _difficultyLevel = level;
     _prefs.setDifficulty(level);
     if (_masterLockEnabled) _pushLockedAppsToNative();
@@ -139,6 +227,12 @@ class AppState extends ChangeNotifier {
   void setBiometric(bool value) {
     _biometricEnabled = value;
     _prefs.setBiometric(value);
+    notifyListeners();
+  }
+
+  void toggleTheme() {
+    _isDarkTheme = !_isDarkTheme;
+    _prefs.setDarkTheme(_isDarkTheme);
     notifyListeners();
   }
 
@@ -154,9 +248,54 @@ class AppState extends ChangeNotifier {
 
   /// Dipanggil dari [MainScaffold] saat startup untuk sync ke native.
   void syncWithNative() {
-    if (_masterLockEnabled) {
+    if (_masterLockEnabled && AppConfig.enableAppLock) {
       nativeService.startService();
       _pushLockedAppsToNative();
+    } else {
+      nativeService.stopService();
+    }
+    restoreSettingsFromSupabase();
+  }
+
+  Future<void> restoreSettingsFromSupabase() async {
+    final authService = AuthService();
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    try {
+      final remote = await authService.fetchSettings();
+      if (remote != null) {
+        _masterLockEnabled = remote['master_lock_enabled'] as bool? ?? _masterLockEnabled;
+        _difficultyLevel = remote['difficulty_level'] as int? ?? _difficultyLevel;
+        _biometricEnabled = remote['biometric_enabled'] as bool? ?? _biometricEnabled;
+        _isDarkTheme = remote['is_dark_theme'] as bool? ?? _isDarkTheme;
+        _isPremium = remote['is_premium'] as bool? ?? _isPremium;
+        _premiumExpiry = remote['premium_expiry'] as int? ?? _premiumExpiry;
+
+        // Persist locally
+        await _prefs.setMasterLock(_masterLockEnabled);
+        await _prefs.setDifficulty(_difficultyLevel);
+        await _prefs.setBiometric(_biometricEnabled);
+        await _prefs.setDarkTheme(_isDarkTheme);
+        await _prefs.setPremiumStatus(_isPremium);
+        await _prefs.setPremiumExpiry(_premiumExpiry);
+
+        // Locked apps
+        final List<dynamic>? lockedList = remote['locked_packages'] as List<dynamic>?;
+        if (lockedList != null) {
+          final lockedSet = lockedList.map((e) => e.toString()).toSet();
+          await _prefs.setLockedPackages(lockedSet);
+          // Sync with local apps list
+          for (var app in apps) {
+            app.isLocked = lockedSet.contains(app.packageName);
+          }
+        }
+
+        AdService.instance.updatePremiumStatus(_isPremium);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error restoring settings from Supabase: $e');
     }
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color surfaceContainerLowest = Color(0xFF0a0e16);
   static const Color surface = Color(0xFF101622);
   static const Color background = Color(0xFF101622);
   static const Color surfaceContainerLow = Color(0xFF0f172a);
@@ -22,12 +21,12 @@ class AppTheme {
   
   static const Color onSurface = Color(0xFFf1f5f9);
   static const Color onSurfaceVariant = Color(0xFF94a3b8);
-  static const Color onPrimary = Color(0xFFffffff);
   
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
+      cardColor: surfaceContainerLow,
       colorScheme: const ColorScheme.dark(
         primary: primary,
         primaryContainer: primaryContainer,
@@ -35,37 +34,87 @@ class AppTheme {
         tertiary: tertiary,
         tertiaryContainer: tertiaryContainer,
         error: error,
+        errorContainer: errorContainer,
         surface: surface,
         surfaceContainerHighest: surfaceContainerHigh,
         onSurface: onSurface,
         onSurfaceVariant: onSurfaceVariant,
         outlineVariant: outlineVariant,
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w800),
-        displayMedium: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w800),
-        displaySmall: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w800),
-        headlineLarge: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w800),
-        headlineMedium: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w800),
-        headlineSmall: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w700),
-        titleLarge: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w700),
-        titleMedium: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w600),
-        titleSmall: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w600),
-        bodyLarge: GoogleFonts.inter(color: onSurface),
-        bodyMedium: GoogleFonts.inter(color: onSurface),
-        bodySmall: GoogleFonts.inter(color: onSurfaceVariant),
-        labelLarge: GoogleFonts.inter(color: onSurface, fontWeight: FontWeight.w700),
-        labelMedium: GoogleFonts.inter(color: onSurfaceVariant, fontWeight: FontWeight.w600),
-        labelSmall: GoogleFonts.inter(color: onSurfaceVariant, fontWeight: FontWeight.w500),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w900),
+        displayMedium: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w900),
+        displaySmall: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w800),
+        headlineLarge: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w800),
+        headlineMedium: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w800),
+        headlineSmall: GoogleFonts.rajdhani(color: onSurface, fontWeight: FontWeight.w700, letterSpacing: 1.0),
+        titleLarge: GoogleFonts.orbitron(color: onSurface, fontWeight: FontWeight.w700),
+        titleMedium: GoogleFonts.rajdhani(color: onSurface, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+        titleSmall: GoogleFonts.rajdhani(color: onSurface, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+        bodyLarge: GoogleFonts.outfit(color: onSurface),
+        bodyMedium: GoogleFonts.outfit(color: onSurface),
+        bodySmall: GoogleFonts.outfit(color: onSurfaceVariant),
+        labelLarge: GoogleFonts.rajdhani(color: onSurface, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+        labelMedium: GoogleFonts.rajdhani(color: onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 1.0),
+        labelSmall: GoogleFonts.rajdhani(color: onSurfaceVariant, fontWeight: FontWeight.w500, letterSpacing: 1.0),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceContainerLow,
         indicatorColor: primaryContainer,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.0, color: primary);
+            return GoogleFonts.rajdhani(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: primary);
           }
-          return GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1.0, color: onSurfaceVariant);
+          return GoogleFonts.rajdhani(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5, color: onSurfaceVariant);
+        }),
+      ),
+    );
+  }
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF1F5F9),
+      cardColor: const Color(0xFFFFFFFF),
+      colorScheme: const ColorScheme.light(
+        primary: primary,
+        primaryContainer: Color(0xFFDCE7FF),
+        secondary: Color(0xFFE2E8F0),
+        tertiary: Color(0xFF059669),
+        tertiaryContainer: Color(0xFFD1FAE5),
+        error: Color(0xFFDC2626),
+        errorContainer: Color(0xFFFFDAD6),
+        surface: Color(0xFFFFFFFF),
+        surfaceContainerHighest: Color(0xFFCBD5E1),
+        onSurface: Color(0xFF0F172A),
+        onSurfaceVariant: Color(0xFF475569),
+        outlineVariant: Color(0xFFE2E8F0),
+      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme).copyWith(
+        displayLarge: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w900),
+        displayMedium: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w900),
+        displaySmall: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w800),
+        headlineLarge: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w800),
+        headlineMedium: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w800),
+        headlineSmall: GoogleFonts.rajdhani(color: const Color(0xFF0F172A), fontWeight: FontWeight.w700, letterSpacing: 1.0),
+        titleLarge: GoogleFonts.orbitron(color: const Color(0xFF0F172A), fontWeight: FontWeight.w700),
+        titleMedium: GoogleFonts.rajdhani(color: const Color(0xFF0F172A), fontWeight: FontWeight.w700, letterSpacing: 0.5),
+        titleSmall: GoogleFonts.rajdhani(color: const Color(0xFF0F172A), fontWeight: FontWeight.w600, letterSpacing: 0.5),
+        bodyLarge: GoogleFonts.outfit(color: const Color(0xFF0F172A)),
+        bodyMedium: GoogleFonts.outfit(color: const Color(0xFF0F172A)),
+        bodySmall: GoogleFonts.outfit(color: const Color(0xFF475569)),
+        labelLarge: GoogleFonts.rajdhani(color: const Color(0xFF0F172A), fontWeight: FontWeight.w700, letterSpacing: 1.5),
+        labelMedium: GoogleFonts.rajdhani(color: const Color(0xFF475569), fontWeight: FontWeight.w600, letterSpacing: 1.0),
+        labelSmall: GoogleFonts.rajdhani(color: const Color(0xFF475569), fontWeight: FontWeight.w500, letterSpacing: 1.0),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        indicatorColor: const Color(0xFFDCE7FF),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.rajdhani(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: primary);
+          }
+          return GoogleFonts.rajdhani(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5, color: const Color(0xFF475569));
         }),
       ),
     );

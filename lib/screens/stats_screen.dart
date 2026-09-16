@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' show pi;
+import 'dart:ui' show ImageFilter;
 import '../services/database_service.dart';
+import '../state/app_state.dart';
+import '../widgets/premium_upgrade_sheet.dart';
+import '../widgets/glow_container.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({super.key});
+  final AppState appState;
+  const StatsScreen({super.key, required this.appState});
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
@@ -60,7 +66,7 @@ class _StatsScreenState extends State<StatsScreen> {
           style: theme.textTheme.labelLarge?.copyWith(
             letterSpacing: 2.0,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFFf1f5f9),
+            color: theme.colorScheme.onSurface,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -73,75 +79,80 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadStats,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: _loadStats,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('PERFORMA SISTEM', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, letterSpacing: 2.0, fontSize: 10)),
-                        const SizedBox(height: 4),
-                        Text('STATISTIK', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, fontSize: 32)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildChartSection(context),
-                    const SizedBox(height: 16),
-                    _buildAccuracySection(context),
-                    if (_topApps.isNotEmpty) ...[
-                      const SizedBox(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('PERFORMA SISTEM', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, letterSpacing: 2.0, fontSize: 10)),
+                            const SizedBox(height: 4),
+                            Text('STATISTIK', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, fontSize: 32)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        _buildChartSection(context),
+                        const SizedBox(height: 16),
+                        _buildAccuracySection(context),
+                        if (_topApps.isNotEmpty) ...[
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('INTELIJEN PENGGUNAAN', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, color: theme.colorScheme.primary, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text('APLIKASI TERKUNCI\nPALING SERING', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('INTELIJEN PENGGUNAAN', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, color: theme.colorScheme.primary, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('APLIKASI TERKUNCI\nPALING SERING', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                                ],
+                              ),
+                              ElevatedButton(
+                                onPressed: () => _showAllApps(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.secondary,
+                                  foregroundColor: theme.colorScheme.onSurface,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                ),
+                                child: Text('LIHAT SEMUA', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w900)),
+                              )
                             ],
                           ),
-                          ElevatedButton(
-                            onPressed: () => _showAllApps(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1e293b),
-                              foregroundColor: theme.colorScheme.onSurface,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            ),
-                            child: Text('LIHAT SEMUA', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w900)),
-                          )
+                          const SizedBox(height: 16),
+                          ..._topApps.asMap().entries.map((e) {
+                            final app   = e.value;
+                            final cnt   = (app['cnt'] as int?) ?? 0;
+                            final maxCnt = (_topApps.first['cnt'] as int?) ?? 1;
+                            final pct   = cnt / maxCnt;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildAppStatRow(context, app['appName'] as String, '$cnt KALI', Icons.apps_rounded, pct),
+                            );
+                          }),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      ..._topApps.asMap().entries.map((e) {
-                        final app   = e.value;
-                        final cnt   = (app['cnt'] as int?) ?? 0;
-                        final maxCnt = (_topApps.first['cnt'] as int?) ?? 1;
-                        final pct   = cnt / maxCnt;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildAppStatRow(context, app['appName'] as String, '$cnt KALI', Icons.apps_rounded, pct),
-                        );
-                      }),
-                    ],
-                    if (_totalSolves > 0) ...[
-                      const SizedBox(height: 32),
-                      _buildAchievement(context),
-                    ],
-                    const SizedBox(height: 100),
-                  ],
+                        if (_totalSolves > 0) ...[
+                          const SizedBox(height: 32),
+                          _buildAchievement(context),
+                        ],
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+          if (!widget.appState.isPremium) _buildLockedOverlay(context),
+        ],
+      ),
     );
   }
 
@@ -154,7 +165,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
         gradient: RadialGradient(
@@ -174,11 +185,24 @@ class _StatsScreenState extends State<StatsScreen> {
             children: [
               Text(
                 _totalSolves > 0 ? '$_totalSolves' : '—',
-                style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
+                style: GoogleFonts.jetBrainsMono(
+                  textStyle: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
               if (_totalSolves > 0) ...[
                 const SizedBox(width: 8),
-                Text('AVG ${_avgDurationSec.toStringAsFixed(1)}s', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.tertiary, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(
+                  'AVG ${_avgDurationSec.toStringAsFixed(1)}s',
+                  style: GoogleFonts.jetBrainsMono(
+                    textStyle: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.tertiary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -250,7 +274,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF1e293b),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -269,14 +293,21 @@ class _StatsScreenState extends State<StatsScreen> {
                   painter: _AccuracyRingPainter(
                     percentage: _accuracy.clamp(0.0, 1.0),
                     color: theme.colorScheme.tertiary,
-                    backgroundColor: const Color(0xFF0f172a),
+                    backgroundColor: theme.colorScheme.secondary,
                   ),
                 ),
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(label, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+                      Text(
+                        label,
+                        style: GoogleFonts.jetBrainsMono(
+                          textStyle: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
                       Text(statusText, style: theme.textTheme.labelSmall?.copyWith(fontSize: 8, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -304,7 +335,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -312,7 +343,7 @@ class _StatsScreenState extends State<StatsScreen> {
         children: [
           Container(
             width: 48, height: 48,
-            decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 16),
@@ -324,14 +355,23 @@ class _StatsScreenState extends State<StatsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(child: Text(name, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-                    Text(count, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w900)),
+                    Text(
+                      count,
+                      style: GoogleFonts.jetBrainsMono(
+                        textStyle: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Container(
                   height: 4,
                   width: double.infinity,
-                  decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(2)),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: FractionallySizedBox(
@@ -359,7 +399,7 @@ class _StatsScreenState extends State<StatsScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -385,7 +425,15 @@ class _StatsScreenState extends State<StatsScreen> {
                   children: [
                     Text('PENCAPAIAN', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.tertiary, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
                     const SizedBox(height: 8),
-                    Text('$_totalSolves SOAL SELESAI', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                    Text(
+                      '$_totalSolves SOAL SELESAI',
+                      style: GoogleFonts.jetBrainsMono(
+                        textStyle: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Akurasi ${(_accuracy * 100).toStringAsFixed(0)}% dengan rata-rata waktu penyelesaian ${_avgDurationSec.toStringAsFixed(1)} detik.',
@@ -398,7 +446,7 @@ class _StatsScreenState extends State<StatsScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF334155),
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
@@ -420,7 +468,7 @@ class _StatsScreenState extends State<StatsScreen> {
       builder: (ctx) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
         decoration: BoxDecoration(
-          color: const Color(0xFF0f172a),
+          color: theme.cardColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
@@ -437,7 +485,16 @@ class _StatsScreenState extends State<StatsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('SEMUA APLIKASI TERKUNCI', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                  Text('${_topApps.length} APP', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(
+                    '${_topApps.length} APP',
+                    style: GoogleFonts.jetBrainsMono(
+                      textStyle: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -454,7 +511,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1e293b),
+                            color: theme.colorScheme.secondary,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: theme.colorScheme.outlineVariant),
                           ),
@@ -467,7 +524,16 @@ class _StatsScreenState extends State<StatsScreen> {
                               ),
                               const SizedBox(width: 14),
                               Expanded(child: Text(app['appName'] as String, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
-                              Text('${app['cnt']} kali', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w900)),
+                              Text(
+                                '${app['cnt']} kali',
+                                style: GoogleFonts.jetBrainsMono(
+                                  textStyle: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -475,6 +541,88 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+    return Positioned.fill(
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+          child: Container(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.75),
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GlowContainer(
+                  glowType: GlowType.primary,
+                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: theme.colorScheme.primary, width: 2),
+                  padding: const EdgeInsets.all(20),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    size: 48,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'STATISTIK PENUH TERKUNCI',
+                  style: GoogleFonts.orbitron(
+                    textStyle: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Dapatkan intelijen analisis penuh, akurasi pemecahan soal matematika, grafik mingguan, pencapaian, dan data terperinci lainnya.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => PremiumUpgradeSheet(appState: widget.appState),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 8,
+                      shadowColor: theme.colorScheme.primary.withValues(alpha: 0.4),
+                    ),
+                    child: Text(
+                      'BUKA COBALT PREMIUM',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

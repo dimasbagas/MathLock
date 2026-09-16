@@ -12,6 +12,7 @@ class UnlockEvent {
   final int    durationMs;     // waktu dari soal muncul → jawaban benar/menyerah
   final String formula;        // teks soal, misal "12 × 5 + 7"
   final int    answer;         // jawaban benar
+  final bool   isSynced;       // status sinkronisasi ke Supabase
 
   const UnlockEvent({
     this.id,
@@ -23,6 +24,7 @@ class UnlockEvent {
     required this.durationMs,
     required this.formula,
     required this.answer,
+    this.isSynced = false,
   });
 
   Map<String, dynamic> toMap() => {
@@ -35,6 +37,7 @@ class UnlockEvent {
     'durationMs':   durationMs,
     'formula':      formula,
     'answer':       answer,
+    'isSynced':     isSynced ? 1 : 0,
   };
 
   factory UnlockEvent.fromMap(Map<String, dynamic> m) => UnlockEvent(
@@ -47,6 +50,7 @@ class UnlockEvent {
     durationMs:  m['durationMs']  as int,
     formula:     m['formula']     as String,
     answer:      m['answer']      as int,
+    isSynced:    m['isSynced'] != null ? (m['isSynced'] as int) == 1 : false,
   );
 }
 
@@ -79,7 +83,7 @@ class DatabaseService {
     final dbPath = join(await getDatabasesPath(), 'cobalt_fortress.db');
     return openDatabase(
       dbPath,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE unlock_events (
@@ -91,9 +95,15 @@ class DatabaseService {
             attempts    INTEGER NOT NULL DEFAULT 1,
             durationMs  INTEGER NOT NULL DEFAULT 0,
             formula     TEXT    NOT NULL DEFAULT '',
-            answer      INTEGER NOT NULL DEFAULT 0
+            answer      INTEGER NOT NULL DEFAULT 0,
+            isSynced    INTEGER NOT NULL DEFAULT 0
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE unlock_events ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0');
+        }
       },
     );
   }
@@ -220,5 +230,27 @@ class DatabaseService {
       'SELECT COUNT(*) as cnt FROM unlock_events WHERE success = 1',
     );
     return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  /// Ambil event yang belum disinkronkan ke Supabase.
+  Future<List<UnlockEvent>> getUnsyncedEvents() async {
+    final database = await db;
+    final rows = await database.query(
+      'unlock_events',
+      where: 'isSynced = 0',
+      orderBy: 'timestamp DESC',
+    );
+    return rows.map(UnlockEvent.fromMap).toList();
+  }
+
+  /// Tandai list event ID sebagai sudah disinkronkan.
+  Future<void> markEventsAsSynced(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final database = await db;
+    await database.update(
+      'unlock_events',
+      {'isSynced': 1},
+      where: 'id IN (${ids.join(',')})',
+    );
   }
 }

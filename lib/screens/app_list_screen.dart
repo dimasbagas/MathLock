@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../state/app_state.dart';
+import '../widgets/premium_upgrade_sheet.dart';
 
 class AppListScreen extends StatefulWidget {
   final AppState appState;
@@ -52,7 +53,7 @@ class _AppListScreenState extends State<AppListScreen> {
               style: theme.textTheme.labelLarge?.copyWith(
                 letterSpacing: 2.0,
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFFf1f5f9),
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -126,7 +127,7 @@ class _AppListScreenState extends State<AppListScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: const Color(0xFF0f172a),
+                fillColor: theme.cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
@@ -209,7 +210,7 @@ class _AppListScreenState extends State<AppListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
@@ -238,7 +239,7 @@ class _AppListScreenState extends State<AppListScreen> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: effectiveLocked
@@ -298,7 +299,19 @@ class _AppListScreenState extends State<AppListScreen> {
             // Toggle — disabled (greyed out) when master lock is OFF
             GestureDetector(
               onTap: widget.appState.masterLockEnabled
-                  ? () => widget.appState.toggleApp(app)
+                  ? () {
+                      final success = widget.appState.toggleApp(app);
+                      if (!success) {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => PremiumUpgradeSheet(
+                            appState: widget.appState,
+                          ),
+                        );
+                      }
+                    }
                   : null,
               child: Opacity(
                 opacity: widget.appState.masterLockEnabled ? 1.0 : 0.4,

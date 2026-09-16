@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../services/app_lock_native_service.dart';
+import 'ambient_glow.dart';
 
 /// Full-screen permission wizard shown on first launch.
 /// Guides the user step-by-step through granting Usage Access and
@@ -95,18 +96,27 @@ class _PermissionWizardState extends State<PermissionWizard>
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(color: const Color(0xFF060C17).withValues(alpha: 0.95)),
+              child: Container(color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95)),
             ),
           ),
 
-          // Ambient glow
-          Positioned(
-            top: -size.height * 0.1, left: -80,
-            child: _glow(theme.colorScheme.primary.withValues(alpha: 0.2), 300),
+          AmbientGlow.primary(
+            top: -size.height * 0.1,
+            left: -80,
+            size: 300,
+            sigmaX: 80,
+            sigmaY: 80,
+            alpha: 0.2,
+            context: context,
           ),
-          Positioned(
-            bottom: -size.height * 0.1, right: -80,
-            child: _glow(theme.colorScheme.tertiary.withValues(alpha: 0.1), 280),
+          AmbientGlow.tertiary(
+            bottom: -size.height * 0.1,
+            right: -80,
+            size: 280,
+            sigmaX: 80,
+            sigmaY: 80,
+            alpha: 0.1,
+            context: context,
           ),
 
           // Content
@@ -149,16 +159,6 @@ class _PermissionWizardState extends State<PermissionWizard>
   }
 
   // ── Sub-widgets ────────────────────────────────────────────────────────────
-
-  Widget _glow(Color color, double size) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-      child: Container(
-        width: size, height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      ),
-    );
-  }
 
   Widget _buildHeader(ThemeData theme) {
     return Column(children: [
@@ -334,7 +334,7 @@ class _PermissionWizardState extends State<PermissionWizard>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),

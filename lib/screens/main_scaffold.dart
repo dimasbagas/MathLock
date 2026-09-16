@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'home_screen.dart';
+import '../widgets/ambient_glow.dart';
 import 'history_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 import 'app_list_screen.dart';
 import '../state/app_state.dart';
 import '../widgets/permission_wizard.dart';
+import '../widgets/mock_ad_banner.dart';
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  final AppState appState;
+  const MainScaffold({super.key, required this.appState});
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -17,7 +20,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver {
   int _selectedIndex = 0;
-  final AppState _appState = AppState();
+  AppState get _appState => widget.appState;
 
   // Permission state — null = not yet checked
   bool? _hasUsage;
@@ -41,7 +44,6 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _appState.dispose();
     super.dispose();
   }
 
@@ -105,8 +107,8 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
         // ⚠ pages MUST be inside the builder so sub-widgets rebuild on notify
         final pages = [
           HomeScreen(appState: _appState, onManageVault: _goToAppList),
-          const HistoryScreen(),
-          const StatsScreen(),
+          HistoryScreen(appState: _appState),
+          StatsScreen(appState: _appState),
           AppListScreen(appState: _appState),
           SettingsScreen(appState: _appState),
         ];
@@ -116,33 +118,17 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
           body: Stack(
             children: [
               // ── Ambient glow blobs ─────────────────────────────────────────
-              Positioned(
+              AmbientGlow.primary(
                 top: MediaQuery.of(context).size.height * 0.25,
                 left: -80,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 120, sigmaY: 120),
-                  child: Container(
-                    width: 384, height: 384,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    ),
-                  ),
-                ),
+                size: 384,
+                context: context,
               ),
-              Positioned(
+              AmbientGlow.tertiary(
                 bottom: MediaQuery.of(context).size.height * 0.25,
                 right: -80,
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
-                  child: Container(
-                    width: 384, height: 384,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.colorScheme.tertiary.withValues(alpha: 0.05),
-                    ),
-                  ),
-                ),
+                size: 384,
+                context: context,
               ),
 
               // ── Page content ───────────────────────────────────────────────
@@ -157,6 +143,10 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
                       _buildPermissionBanner(theme),
 
                     Expanded(child: pages[_selectedIndex]),
+
+                    MockAdBanner(appState: _appState),
+                    if (!_appState.isPremium)
+                      const SizedBox(height: 90), // Spasi agar tidak tertutup bottom navigation bar
                   ],
                 ),
               ),
@@ -169,7 +159,7 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
               filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0f172a).withValues(alpha: 0.85),
+                  color: theme.cardColor.withValues(alpha: 0.85),
                   boxShadow: [
                     BoxShadow(
                       color: theme.colorScheme.primary.withValues(alpha: 0.05),

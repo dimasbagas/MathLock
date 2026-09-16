@@ -1,4 +1,4 @@
-package com.example.mathlockv2
+package com.danibaret014.mathlock
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 class AppLockService : Service() {
 
     private lateinit var executor: ScheduledExecutorService
+    private var isScheduled = false
 
     /** Last package that a lock screen was shown for */
     private var lastLockedPackage: String = ""
@@ -28,6 +29,19 @@ class AppLockService : Service() {
     /** State variables for efficient UsageStats querying */
     private var lastEventTime: Long = 0
     private var currentForegroundPackage: String? = null
+    
+    /** Prevent duplicate lock screens from splash screens (cooldown in ms) */
+    private var lastLockScreenTime: Long = 0
+    private val LOCK_SCREEN_COOLDOWN_MS = 1000L  // 1 second
+    
+    /** Prevent fallback from continuously triggering lock for same app */
+    private var lastLockAttemptTime: Long = 0
+    private val LOCK_ATTEMPT_COOLDOWN_MS = 10000L  // 10 seconds
+    
+    /** Track when app was closed to prevent delayed lock */
+    private var lastAppClosedTime: Long = 0
+    private var lastClosedPackage: String = ""
+    private val APP_CLOSE_GRACE_PERIOD_MS = 2000L  // 2 seconds
 
     private val screenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -51,7 +65,7 @@ class AppLockService : Service() {
         const val KEY_DIFFICULTY     = "difficulty_level"
         const val KEY_PENDING_NAME   = "pending_lock_name"
         const val KEY_PENDING_DIFF   = "pending_difficulty"
-        const val OWN_PACKAGE        = "com.example.mathlockv2"
+        const val OWN_PACKAGE        = "com.danibaret014.mathlock"
         const val POLL_INTERVAL_MS   = 500L
     }
 
@@ -77,9 +91,13 @@ class AppLockService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        executor.scheduleAtFixedRate(
-            ::checkForegroundApp, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS
-        )
+        // Guard against multiple schedulers being created if startService() is called repeatedly
+        if (!isScheduled) {
+            isScheduled = true
+            executor.scheduleAtFixedRate(
+                ::checkForegroundApp, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS
+            )
+        }
         return START_STICKY
     }
 
@@ -111,6 +129,14 @@ class AppLockService : Service() {
                 parts[0] to if (parts.size > 1) parts[1] else parts[0]
             }
 
+            // If the last tracked app was removed from the locked list, clear session state
+            if (lastLockedPackage.isNotEmpty() && !lockedMap.containsKey(lastLockedPackage)) {
+                android.util.Log.d("AppLockService", "App $lastLockedPackage removed from lock list. Clearing session.")
+                lastLockedPackage = ""
+                currentForegroundPackage = null
+                prefs.edit().putBoolean("is_unlocked", false).apply()
+            }
+
             val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return
             val now = System.currentTimeMillis()
             val startTime = if (lastEventTime == 0L) now - 1000 * 60 * 60 else lastEventTime
@@ -118,29 +144,59 @@ class AppLockService : Service() {
             val events = usm.queryEvents(startTime, now)
             val event = UsageEvents.Event()
             
+            var latestForegroundPackage: String? = null
             var hasNewEvents = false
             
             while (events.hasNextEvent()) {
                 events.getNextEvent(event)
                 lastEventTime = event.timeStamp
                 
-                // 1 = ACTIVITY_RESUMED (MOVE_TO_FOREGROUND)
-                if (event.eventType == 1) { 
-                    currentForegroundPackage = event.packageName
+                if (event.eventType == 1) { // RESUMED
+                    latestForegroundPackage = event.packageName
                     hasNewEvents = true
-                    processForegroundApp(event.packageName, lockedMap, prefs)
-                } 
+                } else if (event.eventType == 2) { // PAUSED
+                    if (event.packageName == latestForegroundPackage) {
+                        latestForegroundPackage = null
+                    }
+                    hasNewEvents = true
+                }
             }
-            
-            // If no new events, continuously enforce the state of the last known foreground app
-            // to ensure lock screens bypassed by transparent overlays or splash transitions are brought back.
-            if (!hasNewEvents && currentForegroundPackage != null) {
-                processForegroundApp(currentForegroundPackage!!, lockedMap, prefs)
+
+            // Jika Android telat lapor event (umum di MIUI), tanya langsung state saat ini
+            val actualForeground = latestForegroundPackage ?: getForegroundPackage(usm)
+
+            if (actualForeground != null) {
+                if (latestForegroundPackage == OWN_PACKAGE) {
+                    currentForegroundPackage = null
+                    // Jika user kembali ke MathLock (MainActivity), reset lastLockedPackage untuk mencegah lock telat.
+                    if (lastLockedPackage.isNotEmpty() && MainActivity.isActivityActive) {
+                        android.util.Log.d("AppLockService", "User di MathLock (MainActivity). Reset lastLockedPackage ($lastLockedPackage).")
+                        lastLockedPackage = ""
+                        prefs.edit().putBoolean("is_unlocked", false).apply()
+                    }
+                } else {
+                    currentForegroundPackage = actualForeground
+                    processForegroundApp(actualForeground, lockedMap, prefs)
+                }
+            } else {
+                currentForegroundPackage = null
             }
             
         } catch (e: Exception) {
             android.util.Log.e("AppLockService", "Error in checkForegroundApp: ", e)
         }
+    }
+
+    /**
+     * Cara lebih akurat untuk HP Xiaomi: Tanya langsung aplikasi apa yang aktif detik ini.
+     */
+    private fun getForegroundPackage(usm: UsageStatsManager): String? {
+        val now = System.currentTimeMillis()
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 1000 * 10, now)
+        if (stats.isNullOrEmpty()) return null
+        
+        // Cari aplikasi yang waktu pemakaian terakhirnya paling baru
+        return stats.maxByOrNull { it.lastTimeUsed }?.packageName
     }
 
     private fun processForegroundApp(foreground: String, lockedMap: Map<String, String>, prefs: SharedPreferences) {
@@ -152,16 +208,17 @@ class AppLockService : Service() {
             if (foreground == lastLockedPackage) {
                 // Check if user authenticated
                 if (prefs.getBoolean("is_unlocked", false)) {
-                    return
+                    return  // User unlock, biarkan main
                 } else {
-                    // App bypassed lock (e.g. splash screen transition), re-trigger!
-                    showLockScreen()
+                    // User belum unlock, tapi lock screen SUDAH ditampilkan sebelumnya
+                    // Jangan trigger ulang - cukup 1x saja per session
+                    android.util.Log.d("AppLockService", "Already locked: $foreground. Skip re-trigger.")
                     return
                 }
             }
-
             android.util.Log.d("AppLockService", "Target locked app detected: $foreground. Showing Lock Screen.")
             lastLockedPackage = foreground
+            android.util.Log.d("AppLockService", "Updated lastLockedPackage to: $foreground")
 
             val appName = lockedMap[foreground] ?: foreground
             val difficulty = prefs.getInt(KEY_DIFFICULTY, 1)
@@ -173,11 +230,14 @@ class AppLockService : Service() {
                 .putBoolean("is_unlocked", false)
                 .apply()
 
+            lastLockAttemptTime = System.currentTimeMillis()
             showLockScreen()
         } else {
             // User navigated away to an UNLOCKED app
             if (lastLockedPackage.isNotEmpty() && lastLockedPackage != foreground) {
                 android.util.Log.d("AppLockService", "Navigated away to $foreground, resetting lastLockedPackage.")
+                lastClosedPackage = lastLockedPackage  // Track which app was closed
+                lastAppClosedTime = System.currentTimeMillis()  // Track when it was closed
                 lastLockedPackage = ""
                 prefs.edit().putBoolean("is_unlocked", false).apply()
             }
@@ -185,7 +245,18 @@ class AppLockService : Service() {
     }
 
     private fun showLockScreen() {
-        android.util.Log.d("AppLockService", "showLockScreen: Launching LockActivity for pending app")
+        val now = System.currentTimeMillis()
+        // Prevent duplicate lock screens from splash screen transitions or rapid events
+        if (now - lastLockScreenTime < LOCK_SCREEN_COOLDOWN_MS) {
+            android.util.Log.d("AppLockService", "showLockScreen: Skipped (cooldown active)")
+            return
+        }
+        
+        lastLockScreenTime = now
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val appName = prefs.getString(KEY_PENDING_NAME, "Unknown")
+        // Log saat showLockScreen dipanggil
+        android.util.Log.d("AppLockService", "showLockScreen: Launching LockActivity for target: $appName")
         val intent = Intent(this, MathChallengeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION
         }
@@ -223,7 +294,7 @@ class AppLockService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Cobalt Fortress Aktif")
             .setContentText("Melindungi aplikasi Anda dari akses tidak sah")
-            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setSmallIcon(R.mipmap.gambar)
             .setContentIntent(pi)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

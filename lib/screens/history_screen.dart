@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../widgets/glow_container.dart';
 import '../services/database_service.dart';
+import '../state/app_state.dart';
+import '../widgets/premium_upgrade_sheet.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final AppState appState;
+  const HistoryScreen({super.key, required this.appState});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -30,7 +34,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final events       = await _db.getRecentEvents(limit: 30);
+      final isPremium    = widget.appState.isPremium;
+      final events       = await _db.getRecentEvents(limit: isPremium ? 30 : 5);
       final totalAccess  = await _db.getTotalEvents();
       final totalBlocked = await _db.getTotalBlocked();
       final accuracy     = await _db.getAccuracy();
@@ -59,7 +64,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           style: theme.textTheme.labelLarge?.copyWith(
             letterSpacing: 2.0,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFFf1f5f9),
+            color: theme.colorScheme.onSurface,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -112,11 +117,77 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     // Event list
                     if (_events.isEmpty)
                       _buildEmptyState(theme)
-                    else
+                    else ...[
                       ...List.generate(_events.length, (i) => Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: _buildLogEntry(context, index: i, event: _events[i]),
                       )),
+                      if (!widget.appState.isPremium) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.workspace_premium_rounded, color: theme.colorScheme.primary, size: 22),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'BATAS RIWAYAT FREE TERCAPAI',
+                                          style: theme.textTheme.labelSmall?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Hanya menampilkan 5 log terakhir. Upgrade untuk riwayat tanpa batas.',
+                                          style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => PremiumUpgradeSheet(appState: widget.appState),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: const Text(
+                                    'UPGRADE PREMIUM',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
 
                     const SizedBox(height: 32),
                     Row(
@@ -189,7 +260,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Container(
                           height: 4,
                           width: double.infinity,
-                          decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(2)),
+                          decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(2)),
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: FractionallySizedBox(
@@ -254,7 +325,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0f172a),
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isExpanded ? theme.colorScheme.primary.withValues(alpha: 0.5) : theme.colorScheme.outlineVariant,
@@ -271,7 +342,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     children: [
                       Container(
                         width: 40, height: 40,
-                        decoration: BoxDecoration(color: const Color(0xFF1e293b), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(12)),
                         child: Icon(Icons.apps_rounded, color: theme.colorScheme.onSurface, size: 20),
                       ),
                       const SizedBox(width: 12),
@@ -312,7 +383,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0a0e16),
+                color: theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
               ),
@@ -326,7 +397,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       textAlign: TextAlign.right,
                       overflow: TextOverflow.ellipsis,
                       text: TextSpan(
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface,
+                        ),
                         children: [
                           TextSpan(text: '${event.formula} = '),
                           TextSpan(
@@ -397,7 +472,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f172a),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
