@@ -1,0 +1,43 @@
+name: Keep Supabase Alive
+
+# Supabase free tier: project di-pause jika 7 hari tidak ada aktivitas.
+# Workflow ini "memanggil" Supabase 2x seminggu (Senin & Kamis = tiap 3-4 hari)
+# agar project selalu dianggap aktif dan tidak tersuspend.
+
+on:
+  schedule:
+    # Menit 0, Jam 00:00 UTC, hari Senin(1) & Kamis(4)
+    - cron: "0 0 * * 1,4"
+  workflow_dispatch: # tombol "Run workflow" manual di tab Actions GitHub
+
+# Biar tidak jalan berbarengan jika ada penjadwalan tumpang tindih
+concurrency:
+  group: keep-supabase-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          # Diisi dari GitHub Secrets (tidak ditulis langsung di file ini)
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "Target: $SUPABASE_URL"
+          for i in 1 2 3; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/")
+            echo "Attempt $i -> HTTP $CODE"
+            if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 300 ]; then
+              echo "OK: Supabase merespons, project tetap aktif."
+              exit 0
+            fi
+            echo "Belum sukses, coba lagi dalam 10 detik..."
+            sleep 10
+          done
+          echo "GAGAL: Supabase tidak merespons setelah 3x percobaan."
+          echo "Cek: SUPABASE_URL / SUPABASE_ANON_KEY di Settings > Secrets."
+          exit 1
