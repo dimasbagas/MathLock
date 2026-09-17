@@ -22,6 +22,8 @@ class _StatsScreenState extends State<StatsScreen> {
   int                    _totalSolves   = 0;
   double                 _avgDurationSec = 0;
   double                 _accuracy      = 0;
+  double                 _screenTimeSec = 0;
+  List<DailyStat>        _screenTimeWeekly = [];
   List<DailyStat>        _weeklyStats   = [];
   List<Map<String, dynamic>> _topApps  = [];
   bool                   _isLoading     = true;
@@ -38,6 +40,8 @@ class _StatsScreenState extends State<StatsScreen> {
       final totalSolves    = await _db.getTotalSolves();
       final avgDuration    = await _db.getAvgDurationSec();
       final accuracy       = await _db.getAccuracy();
+      final screenTime     = await _db.getTotalScreenTimeSec();
+      final screenWeekly   = await _db.getWeeklyScreenTime();
       final weeklyStats    = await _db.getWeeklyStats();
       final topApps        = await _db.getTopApps(limit: 4);
       if (mounted) {
@@ -45,6 +49,8 @@ class _StatsScreenState extends State<StatsScreen> {
           _totalSolves    = totalSolves;
           _avgDurationSec = avgDuration;
           _accuracy       = accuracy;
+          _screenTimeSec  = screenTime;
+          _screenTimeWeekly = screenWeekly;
           _weeklyStats    = weeklyStats;
           _topApps        = topApps;
           _isLoading      = false;
@@ -102,6 +108,10 @@ class _StatsScreenState extends State<StatsScreen> {
                         const SizedBox(height: 24),
                         _buildChartSection(context),
                         const SizedBox(height: 16),
+                        if (_screenTimeSec > 0) ...[
+                          _buildScreenTimeSection(context),
+                          const SizedBox(height: 16),
+                        ],
                         _buildAccuracySection(context),
                         if (_topApps.isNotEmpty) ...[
                           const SizedBox(height: 32),
@@ -222,6 +232,89 @@ class _StatsScreenState extends State<StatsScreen> {
                     }).toList(),
                   ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScreenTimeSection(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Ubah detik jadi "1j 23m" atau "45m"
+    String label;
+    final h = (_screenTimeSec / 3600).floor();
+    final m = ((_screenTimeSec % 3600) / 60).floor();
+    if (h > 0) {
+      label = '${h}j ${m}m';
+    } else if (m > 0) {
+      label = '${m}m';
+    } else {
+      label = '${_screenTimeSec.round()}d';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        gradient: RadialGradient(
+          colors: [theme.colorScheme.tertiary.withValues(alpha: 0.15), Colors.transparent],
+          center: Alignment.center,
+          radius: 0.8,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.hourglass_top_rounded, color: theme.colorScheme.tertiary, size: 20),
+              const SizedBox(width: 8),
+              Text('TOTAL SCREEN TIME', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.jetBrainsMono(
+                  textStyle: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: theme.colorScheme.tertiary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'di app terkunci',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          if (_screenTimeWeekly.any((s) => s.avgDurationSec > 0)) ...[
+            const SizedBox(height: 20),
+            Text('DURASI HARIAN (DETIK)', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 80,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _screenTimeWeekly.map((s) {
+                  final maxSec = _screenTimeWeekly.fold(0.0, (m, x) => x.avgDurationSec > m ? x.avgDurationSec : m);
+                  final pct = maxSec > 0 ? (s.avgDurationSec / maxSec).clamp(0.05, 1.0) : 0.05;
+                  return _buildBar(context, s.dayLabel, pct);
+                }).toList(),
+              ),
+            ),
+          ],
         ],
       ),
     );

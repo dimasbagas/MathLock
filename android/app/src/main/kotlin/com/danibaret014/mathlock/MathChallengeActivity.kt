@@ -52,16 +52,18 @@ class MathChallengeActivity : FlutterActivity() {
                     }
                     "dismissLock" -> {
                         prefs.edit().putBoolean("is_unlocked", true).apply()
-                        // M2: mulai timer intra-session — app akan di-re-lock setelah SESSION_LIMIT_MS.
+                        // M2: mulai timer intra-session — app akan di-re-lock sesuai relock_interval_minutes.
                         val pkg = prefs.getString(AppLockService.KEY_PENDING_PACKAGE, null)
                         if (pkg != null) {
-                            val deadline = System.currentTimeMillis() + AppLockService.SESSION_LIMIT_MS
+                            val intervalMinutes = prefs.getInt(AppLockService.KEY_RELOCK_INTERVAL, 15)
+                            val sessionLimitMs = if (intervalMinutes == 0) 3000L else intervalMinutes * 60 * 1000L
+                            val deadline = System.currentTimeMillis() + sessionLimitMs
                             val arm = Intent(AppLockService.ACTION_SESSION_ARM)
                                 .setPackage(AppLockService.OWN_PACKAGE)
                                 .putExtra("package_name", pkg)
                                 .putExtra(EXTRA_RELOCK_DEADLINE, deadline)
                             sendBroadcast(arm)
-                            android.util.Log.d("MathChallenge", "Session timer armed for $pkg (re-lock in ${AppLockService.SESSION_LIMIT_MS / 60000} min)")
+                            android.util.Log.d("MathChallenge", "Session timer armed for $pkg (re-lock in ${if (intervalMinutes == 0) "3 sec [DEV]" else "$intervalMinutes min"})")
                         }
                         finish()
                         result.success(null)

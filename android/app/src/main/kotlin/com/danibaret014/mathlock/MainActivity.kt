@@ -75,9 +75,11 @@ class MainActivity : FlutterActivity() {
                             if (pkg != null) "$pkg|$name" else null
                         }.toSet()
                         val difficulty = call.argument<Int>("difficulty") ?: 1
+                        val relockIntervalMinutes = call.argument<Int>("relockIntervalMinutes") ?: 15
                         prefs.edit()
                             .putStringSet(AppLockService.KEY_LOCKED_APPS, appsSet)
                             .putInt(AppLockService.KEY_DIFFICULTY, difficulty)
+                            .putInt(AppLockService.KEY_RELOCK_INTERVAL, relockIntervalMinutes)
                             .apply()
                         result.success(null)
                     }

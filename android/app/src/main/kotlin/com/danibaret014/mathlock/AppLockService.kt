@@ -79,6 +79,7 @@ class AppLockService : Service() {
         const val KEY_LOCKED_APPS    = "locked_apps"        // Set<String> "pkg|name"
         const val KEY_MASTER_LOCK    = "master_lock_enabled"
         const val KEY_DIFFICULTY     = "difficulty_level"
+        const val KEY_RELOCK_INTERVAL = "relock_interval_minutes"
         const val KEY_PENDING_NAME   = "pending_lock_name"
         const val KEY_PENDING_DIFF   = "pending_difficulty"
         const val KEY_PENDING_PACKAGE = "pending_lock_package"
@@ -108,7 +109,11 @@ class AppLockService : Service() {
         registerReceiver(screenReceiver, filter)
 
         // M2: terima deadline re-lock intra-session dari MathChallengeActivity
-        registerReceiver(lockResultReceiver, android.content.IntentFilter(ACTION_SESSION_ARM))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(lockResultReceiver, android.content.IntentFilter(ACTION_SESSION_ARM), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(lockResultReceiver, android.content.IntentFilter(ACTION_SESSION_ARM))
+        }
 
         executor = Executors.newSingleThreadScheduledExecutor()
     }

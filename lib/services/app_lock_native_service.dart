@@ -26,9 +26,14 @@ class AppLockNativeService {
 
   Future<void> updateLockedApps(
     List<Map<String, String>> apps,
-    int difficulty,
-  ) =>
-      _invoke('updateLockedApps', {'apps': apps, 'difficulty': difficulty});
+    int difficulty, {
+    int relockIntervalMinutes = 15,
+  }) =>
+      _invoke('updateLockedApps', {
+        'apps': apps,
+        'difficulty': difficulty,
+        'relockIntervalMinutes': relockIntervalMinutes,
+      });
 
   Future<List<String>> getLockedApps() async {
     final list = await _invoke<List<dynamic>>('getLockedApps');

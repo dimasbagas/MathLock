@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../state/app_state.dart';
 import '../widgets/glow_container.dart';
 import '../widgets/premium_upgrade_sheet.dart';
@@ -47,10 +49,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHero(context),
-                const SizedBox(height: 24),
-                _buildPremiumStatusCard(context),
+                if (AppConfig.enablePremiumRestrictions) ...[
+                  const SizedBox(height: 24),
+                  _buildPremiumStatusCard(context),
+                ],
                 const SizedBox(height: 24),
                 _buildDifficultySection(context),
+                const SizedBox(height: 24),
+                _buildRelockSection(context),
                 const SizedBox(height: 24),
                 _buildGeneralSection(context),
                 const SizedBox(height: 24),
@@ -223,6 +229,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRelockSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final intervals = [
+      if (kDebugMode) {'minutes': 0, 'label': '⚡ 3 Detik', 'tag': 'Dev Test'},
+      {'minutes': 5, 'label': '5 Menit', 'tag': 'Ketat'},
+      {'minutes': 10, 'label': '10 Menit', 'tag': 'Protektif'},
+      {'minutes': 15, 'label': '15 Menit', 'tag': 'Standar'},
+      {'minutes': 30, 'label': '30 Menit', 'tag': 'Santai'},
+      {'minutes': 60, 'label': '60 Menit', 'tag': 'Longgar'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('DURASI RE-LOCK INTRA-SESI', style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, letterSpacing: 2.0, fontWeight: FontWeight.bold)),
+            Icon(Icons.timer_outlined, color: theme.colorScheme.onSurfaceVariant, size: 16),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Interval penguncian ulang matematika saat aplikasi target terus digunakan.',
+          style: theme.textTheme.bodySmall?.copyWith(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 16),
+        ListenableBuilder(
+          listenable: widget.appState,
+          builder: (context, _) {
+            final currentMinutes = widget.appState.relockIntervalMinutes;
+            return Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: intervals.map((item) {
+                final mins = item['minutes'] as int;
+                final label = item['label'] as String;
+                final tag = item['tag'] as String;
+                final isActive = currentMinutes == mins;
+
+                return ChoiceChip(
+                  label: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isActive ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface)),
+                      Text(tag, style: TextStyle(fontSize: 9, color: isActive ? theme.colorScheme.onPrimary.withValues(alpha: 0.8) : theme.colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                  selected: isActive,
+                  onSelected: (selected) {
+                    if (selected) {
+                      widget.appState.setRelockInterval(mins);
+                    }
+                  },
+                  selectedColor: theme.colorScheme.primary,
+                  backgroundColor: theme.cardColor,
+                  side: BorderSide(
+                    color: isActive ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                    width: isActive ? 2 : 1,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  showCheckmark: false,
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -451,6 +529,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPremiumStatusCard(BuildContext context) {
+    if (!AppConfig.enablePremiumRestrictions) {
+      return const SizedBox.shrink();
+    }
     final theme = Theme.of(context);
     final appState = widget.appState;
     final isPremium = appState.isPremium;
@@ -513,6 +594,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     // Tampilan jika premium aktif
+    if (!appState.isPremium) {
+      return const SizedBox.shrink();
+    }
     String expiryText = 'Selamanya (Lifetime)';
     if (appState.premiumExpiry > 0) {
       final expiryDate = DateTime.fromMillisecondsSinceEpoch(appState.premiumExpiry);

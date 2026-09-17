@@ -25,6 +25,7 @@ class AppItem {
 class AppState extends ChangeNotifier {
   bool   _masterLockEnabled = true;
   int    _difficultyLevel   = 1; // 0=SD, 1=SMP, 2=SMA, 3=PT
+  int    _relockIntervalMinutes = 15; // default 15 mins
   bool   _biometricEnabled  = true;
   bool   _isDarkTheme       = true;
   bool   _isPremium         = false;
@@ -48,6 +49,7 @@ class AppState extends ChangeNotifier {
     // Load persisted settings terlebih dahulu
     _masterLockEnabled = await _prefs.getMasterLock();
     _difficultyLevel   = await _prefs.getDifficulty();
+    _relockIntervalMinutes = await _prefs.getRelockInterval();
     _biometricEnabled  = await _prefs.getBiometric();
     _isDarkTheme       = await _prefs.getDarkTheme();
     _isPremium         = await _prefs.getPremiumStatus();
@@ -103,6 +105,7 @@ class AppState extends ChangeNotifier {
 
   bool get masterLockEnabled => _masterLockEnabled;
   int  get difficultyLevel   => _difficultyLevel;
+  int  get relockIntervalMinutes => _relockIntervalMinutes;
   bool get biometricEnabled  => _biometricEnabled;
   bool get isDarkTheme       => _isDarkTheme;
   bool get initialized       => _initialized;
@@ -224,6 +227,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setRelockInterval(int minutes) {
+    _relockIntervalMinutes = minutes;
+    _prefs.setRelockInterval(minutes);
+    if (_masterLockEnabled) _pushLockedAppsToNative();
+    notifyListeners();
+  }
+
   void setBiometric(bool value) {
     _biometricEnabled = value;
     _prefs.setBiometric(value);
@@ -243,7 +253,11 @@ class AppState extends ChangeNotifier {
         .where((a) => a.isLocked)
         .map((a) => {'package': a.packageName, 'name': a.name})
         .toList();
-    nativeService.updateLockedApps(lockedApps, _difficultyLevel);
+    nativeService.updateLockedApps(
+      lockedApps,
+      _difficultyLevel,
+      relockIntervalMinutes: _relockIntervalMinutes,
+    );
   }
 
   /// Dipanggil dari [MainScaffold] saat startup untuk sync ke native.

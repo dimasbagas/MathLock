@@ -273,6 +273,74 @@ class DatabaseService {
     return (result.first['cnt'] as int?) ?? 0;
   }
 
+  /// Total durasi sesi pemakaian aplikasi terkunci (detik).
+  /// Menghitung (sessionEndMs - sessionStartMs) hanya dari per SESI unik — mencegah dobel hitung karena relock
+  /// menghasilkan beberapa event dalam satu sesi yang sama.
+  /// Inilah metrik "total screen time" untuk BAB 4.
+  Future<double> getTotalScreenTimeSec() async {
+    final database = await db;
+    final result = await database.rawQuery(
+      '''SELECT COALESCE(SUM((endMs - startMs) / 1000.0), 0) as total
+         FROM (
+           SELECT sessionId,
+                  MIN(sessionStartMs) as startMs,
+                  MAX(sessionEndMs)   as endMs
+             FROM unlock_events
+            WHERE sessionEndMs > 0 AND sessionStartMs > 0
+              AND sessionId != ''
+            GROUP BY sessionId
+         )''',
+    );
+    final total = result.first['total'];
+    if (total == null) return 0.0;
+    return (total as num).toDouble();
+  }
+
+  /// Screen time harian (detik) untuk 7 hari terakhir — fondasi
+  /// "habit extinction curve" BAB 4: tren turunnya durasi pemakaian
+  /// aplikasi terkunci dari minggu ke minggu.
+  Future<List<DailyStat>> getWeeklyScreenTime() async {
+    final database = await db;
+    final now = DateTime.now();
+
+    // Mulai dari Senin minggu ini
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = DateTime(monday.year, monday.month, monday.day)
+        .millisecondsSinceEpoch;
+
+    const dayLabels = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'];
+    final List<DailyStat> stats = [];
+
+    for (int i = 0; i < 7; i++) {
+      final dayStart = startOfWeek + i * 86400000;
+      final dayEnd   = dayStart + 86400000;
+
+      final rows = await database.rawQuery(
+        '''SELECT COALESCE(SUM((endMs - startMs) / 1000.0), 0) as avg
+           FROM (
+             SELECT sessionId,
+                    MIN(sessionStartMs) as startMs,
+                    MAX(sessionEndMs)   as endMs
+               FROM unlock_events
+              WHERE sessionEndMs > 0 AND sessionStartMs > 0
+                AND sessionId != ''
+                AND sessionStartMs >= ? AND sessionStartMs < ?
+              GROUP BY sessionId
+           )''',
+        [dayStart, dayEnd],
+      );
+
+      final avg = rows.first['avg'];
+      stats.add(DailyStat(
+        dayLabel:       dayLabels[i],
+        avgDurationSec: avg != null ? (avg as num).toDouble() : 0,
+        totalSolves:    0,
+      ));
+    }
+
+    return stats;
+  }
+
   /// Ambil event yang belum disinkronkan ke Supabase.
   Future<List<UnlockEvent>> getUnsyncedEvents() async {
     final database = await db;

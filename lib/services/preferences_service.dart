@@ -9,6 +9,7 @@ class PreferencesService {
   static const _keyDifficulty    = 'difficulty_level';
   static const _keyBiometric     = 'biometric_enabled';
   static const _keyDarkTheme     = 'dark_theme_enabled';
+  static const _keyRelockInterval = 'relock_interval_minutes';
 
   // ── Singleton ─────────────────────────────────────────────────────────────
 
@@ -38,6 +39,14 @@ class PreferencesService {
 
   Future<void> setDifficulty(int value) async =>
       (await _p).setInt(_keyDifficulty, value);
+
+  // ── Relock Interval ────────────────────────────────────────────────────────
+
+  Future<int> getRelockInterval() async =>
+      (await _p).getInt(_keyRelockInterval) ?? 15;
+
+  Future<void> setRelockInterval(int value) async =>
+      (await _p).setInt(_keyRelockInterval, value);
 
   // ── Biometric ─────────────────────────────────────────────────────────────
 
