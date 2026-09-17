@@ -29,7 +29,7 @@ Tampilkan tabel:
 **Slide 3 — Kebaruan / novelty (90 detik)**
 > "Fitur kunci saya: Progressive Intra-Session Cognitive Friction.
 > 1. Buka app → wajib jawab soal aritmatika.
-> 2. Sudah masuk? Setelah 30 menit scroll, app TERKUNCI LAGI di tengah sesi.
+> 2. Sudah masuk? Setelah 15 menit scroll, app TERKUNCI LAGI di tengah sesi.
 > 3. Mau lanjut? Jawab soal lagi. GAGAL? Dikeluar-paksa dari aplikasi.
 > 4. Interval kunci bisa naik bertahap sesuai progres pengguna.
 > Kombinasi 4 hal ini tidak ditemukan pada aplikasi manapun, sejauh penelusuran

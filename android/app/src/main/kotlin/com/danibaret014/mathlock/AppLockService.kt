@@ -43,6 +43,22 @@ class AppLockService : Service() {
     private var lastClosedPackage: String = ""
     private val APP_CLOSE_GRACE_PERIOD_MS = 2000L  // 2 seconds
 
+    // ── Intra-session re-lock (M2: progressive cognitive friction) ────────────
+    /** package → epoch ms kapan kunci harus muncul lagi di tengah sesi */
+    private val relockDeadlines = HashMap<String, Long>()
+
+    /** Menerima deadline re-lock dari MathChallengeActivity lewat result intent */
+    private val lockResultReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val pkg = intent?.getStringExtra("package_name") ?: return
+            val deadline = intent.getLongExtra(MathChallengeActivity.EXTRA_RELOCK_DEADLINE, -1L)
+            if (deadline > 0) {
+                relockDeadlines[pkg] = deadline
+                android.util.Log.d("AppLockService", "Session deadline armed for $pkg → re-lock at $deadline")
+            }
+        }
+    }
+
     private val screenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
@@ -65,8 +81,12 @@ class AppLockService : Service() {
         const val KEY_DIFFICULTY     = "difficulty_level"
         const val KEY_PENDING_NAME   = "pending_lock_name"
         const val KEY_PENDING_DIFF   = "pending_difficulty"
+        const val KEY_PENDING_PACKAGE = "pending_lock_package"
+        const val KEY_SESSION_ID     = "pending_session_id"
         const val OWN_PACKAGE        = "com.danibaret014.mathlock"
         const val POLL_INTERVAL_MS   = 500L
+        const val SESSION_LIMIT_MS   = 15 * 60 * 1000L  // M2: re-lock tiap 15 menit pemakaian
+        const val ACTION_SESSION_ARM = "com.danibaret014.mathlock.SESSION_ARM"
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -86,7 +106,10 @@ class AppLockService : Service() {
         
         val filter = android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF)
         registerReceiver(screenReceiver, filter)
-        
+
+        // M2: terima deadline re-lock intra-session dari MathChallengeActivity
+        registerReceiver(lockResultReceiver, android.content.IntentFilter(ACTION_SESSION_ARM))
+
         executor = Executors.newSingleThreadScheduledExecutor()
     }
 
@@ -105,6 +128,7 @@ class AppLockService : Service() {
 
     override fun onDestroy() {
         unregisterReceiver(screenReceiver)
+        unregisterReceiver(lockResultReceiver)
         executor.shutdownNow()
         super.onDestroy()
     }
@@ -181,7 +205,27 @@ class AppLockService : Service() {
             } else {
                 currentForegroundPackage = null
             }
-            
+
+            // ── M2: intra-session re-lock ──────────────────────────────────────
+            // Untuk app yang sedang aktif dan sudah di-unlock, kalau timer sesi
+            // sudah habis → paksa masuk lock screen lagi (re-lock mid-session).
+            val active = currentForegroundPackage
+            if (active != null && prefs.getBoolean("is_unlocked", false)) {
+                val deadline = relockDeadlines[active]
+                if (deadline != null && now >= deadline) {
+                    android.util.Log.d("AppLockService", "RE-LOCK intra-session: $active (session limit hit)")
+                    relockDeadlines.remove(active)
+                    // Mulai siklus lock baru untuk app yang sama → re-challenge
+                    lastLockedPackage = ""
+                    prefs.edit()
+                        .putString(KEY_PENDING_NAME, lockedMap[active] ?: active)
+                        .putInt(KEY_PENDING_DIFF, prefs.getInt(KEY_DIFFICULTY, 1))
+                        .putString(KEY_PENDING_PACKAGE, active)
+                        .putBoolean("is_unlocked", false)
+                        .apply()
+                    showLockScreen()
+                }
+            }
         } catch (e: Exception) {
             android.util.Log.e("AppLockService", "Error in checkForegroundApp: ", e)
         }
@@ -227,6 +271,8 @@ class AppLockService : Service() {
             prefs.edit()
                 .putString(KEY_PENDING_NAME, appName)
                 .putInt(KEY_PENDING_DIFF, difficulty)
+                .putString(KEY_PENDING_PACKAGE, foreground)
+                .putString(KEY_SESSION_ID, "$foreground-${System.currentTimeMillis()}")
                 .putBoolean("is_unlocked", false)
                 .apply()
 

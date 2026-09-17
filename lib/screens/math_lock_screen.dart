@@ -123,6 +123,7 @@ class MathLockScreen extends StatefulWidget {
   final Color appColor;
   final String packageName;    // untuk logging ke database
   final int difficultyLevel;   // 0=SD, 1=SMP, 2=SMA
+  final String sessionId;      // M2: "<package>-<startMs>" dari native service
   final VoidCallback onUnlocked;
   final VoidCallback? onDismiss;
 
@@ -134,6 +135,7 @@ class MathLockScreen extends StatefulWidget {
     required this.appColor,
     this.packageName = '',
     this.difficultyLevel = 1,
+    this.sessionId = '',
     required this.onUnlocked,
     this.onDismiss,
   });
@@ -155,6 +157,7 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
   int _secondsLeft = 10;
   int _currentQuestionIndex = 1;
   int _attemptsLeft = 3;
+  int _refreshCount = 0;          // M2: setiap refresh makan 1 nyawa
   Timer? _countdownTimer;
 
   @override
@@ -228,16 +231,18 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
   }
 
   void _handleLockout() {
-    // Simpan event gagal ke database
+    // Simpan event gagal ke database — M4: forced-exit + retry detection
     DatabaseService().insertEvent(UnlockEvent(
-      packageName: widget.packageName,
-      appName:     widget.appName,
-      timestamp:   DateTime.now().millisecondsSinceEpoch,
-      success:     false,
-      attempts:    _attempts,
-      durationMs:  DateTime.now().millisecondsSinceEpoch - _startTimeMs,
-      formula:     _question['question'] as String,
-      answer:      _question['answer']   as int,
+      packageName:     widget.packageName,
+      appName:         widget.appName,
+      timestamp:       DateTime.now().millisecondsSinceEpoch,
+      success:         false,
+      attempts:        _attempts,
+      durationMs:      DateTime.now().millisecondsSinceEpoch - _startTimeMs,
+      formula:         _question['question'] as String,
+      answer:          _question['answer']   as int,
+      forcedExit:      true,
+      sessionEndMs:    DateTime.now().millisecondsSinceEpoch,
     ));
 
     if (widget.onDismiss != null) {
@@ -287,14 +292,14 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
       setState(() => _isSuccess = true);
       // Simpan event sukses ke database
       DatabaseService().insertEvent(UnlockEvent(
-        packageName: widget.packageName,
-        appName:     widget.appName,
-        timestamp:   DateTime.now().millisecondsSinceEpoch,
-        success:     true,
-        attempts:    _attempts,
-        durationMs:  DateTime.now().millisecondsSinceEpoch - _startTimeMs,
-        formula:     _question['question'] as String,
-        answer:      _question['answer']   as int,
+        packageName:     widget.packageName,
+        appName:         widget.appName,
+        timestamp:       DateTime.now().millisecondsSinceEpoch,
+        success:         true,
+        attempts:        _attempts,
+        durationMs:      DateTime.now().millisecondsSinceEpoch - _startTimeMs,
+        formula:         _question['question'] as String,
+        answer:          _question['answer']   as int,
       ));
       Future.delayed(const Duration(milliseconds: 600), () {
         AdService.instance.showAdWithCallback(() {
@@ -317,8 +322,12 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
     }
   }
 
+  /// M2: refresh soal TIDAK gratis — makan 1 nyawa (mencegah refresh sampai dapat soal gampang).
   void _refreshQuestion() {
+    if (_attemptsLeft <= 1) return;  // nyawa terakhir tidak boleh dipakai untuk refresh
     setState(() {
+      _attemptsLeft--;
+      _refreshCount++;
       _question = generateQuestion(widget.difficultyLevel);
       _input = '';
       _isError = false;
@@ -431,33 +440,8 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
 
                           const SizedBox(height: 16),
 
-                          // Emergency / dismiss button
-                          GestureDetector(
-                            onTap: widget.onDismiss,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: theme.colorScheme.outlineVariant),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.emergency_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'PANGGILAN DARURAT',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      fontSize: 10,
-                                      letterSpacing: 1.0,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          // M2/M4: tombol darurat dihapus — satu-satunya jalan keluar
+                          // adalah menyelesaikan soal. Gagal = forced-exit ke home.
                           const SizedBox(height: 32),
                         ],
                       ),

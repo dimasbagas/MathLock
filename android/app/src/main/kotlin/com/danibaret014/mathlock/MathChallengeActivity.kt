@@ -20,6 +20,8 @@ class MathChallengeActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "com.example.mathlockv2/lock"
+        /** package → epoch ms kapan re-lock intra-sesi harus memicu (dibaca AppLockService) */
+        const val EXTRA_RELOCK_DEADLINE = "relock_deadline"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,12 +43,33 @@ class MathChallengeActivity : FlutterActivity() {
                     "getLockData" -> {
                         val appName    = prefs.getString(AppLockService.KEY_PENDING_NAME, "App") ?: "App"
                         val difficulty = prefs.getInt(AppLockService.KEY_PENDING_DIFF, 1)
-                        result.success(mapOf("appName" to appName, "difficulty" to difficulty))
+                        result.success(mapOf(
+                            "appName"     to appName,
+                            "difficulty"  to difficulty,
+                            "packageName" to prefs.getString(AppLockService.KEY_PENDING_PACKAGE, "")!!,
+                            "sessionId"   to prefs.getString(AppLockService.KEY_SESSION_ID, "")!!
+                        ))
                     }
                     "dismissLock" -> {
                         prefs.edit().putBoolean("is_unlocked", true).apply()
+                        // M2: mulai timer intra-session — app akan di-re-lock setelah SESSION_LIMIT_MS.
+                        val pkg = prefs.getString(AppLockService.KEY_PENDING_PACKAGE, null)
+                        if (pkg != null) {
+                            val deadline = System.currentTimeMillis() + AppLockService.SESSION_LIMIT_MS
+                            val arm = Intent(AppLockService.ACTION_SESSION_ARM)
+                                .setPackage(AppLockService.OWN_PACKAGE)
+                                .putExtra("package_name", pkg)
+                                .putExtra(EXTRA_RELOCK_DEADLINE, deadline)
+                            sendBroadcast(arm)
+                            android.util.Log.d("MathChallenge", "Session timer armed for $pkg (re-lock in ${AppLockService.SESSION_LIMIT_MS / 60000} min)")
+                        }
                         finish()
                         result.success(null)
+                    }
+                    "recordForcedExit" -> {
+                        val pkg = prefs.getString(AppLockService.KEY_PENDING_PACKAGE, "") ?: ""
+                        val sessionId = prefs.getString(AppLockService.KEY_SESSION_ID, "") ?: ""
+                        result.success(mapOf("packageName" to pkg, "sessionId" to sessionId))
                     }
                     "exitToHome" -> {
                         val homeIntent = Intent(Intent.ACTION_MAIN).apply {

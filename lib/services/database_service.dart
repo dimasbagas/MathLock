@@ -14,6 +14,14 @@ class UnlockEvent {
   final int    answer;         // jawaban benar
   final bool   isSynced;       // status sinkronisasi ke Supabase
 
+  // ── Intra-session cognitive friction (M2/M4) ─────────────────────────────
+  final String sessionId;      // "<package>-<startMs>", unik per sesi pemakaian
+  final int    sessionStartMs; // waktu app masuk foreground (lock pertama)
+  final int    sessionEndMs;   // waktu sesi berakhir (0 kalau belum selesai)
+  final String lockReason;     // initial | relock | screen_off | forced_exit
+  final bool   forcedExit;     // true = user di-tendang ke home (gagal soal)
+  final bool   isRetry;        // true = user membuka app lagi setelah forced-exit
+
   const UnlockEvent({
     this.id,
     required this.packageName,
@@ -25,32 +33,50 @@ class UnlockEvent {
     required this.formula,
     required this.answer,
     this.isSynced = false,
+    this.sessionId = '',
+    this.sessionStartMs = 0,
+    this.sessionEndMs = 0,
+    this.lockReason = 'initial',
+    this.forcedExit = false,
+    this.isRetry = false,
   });
 
   Map<String, dynamic> toMap() => {
-    'id':           id,
-    'packageName':  packageName,
-    'appName':      appName,
-    'timestamp':    timestamp,
-    'success':      success ? 1 : 0,
-    'attempts':     attempts,
-    'durationMs':   durationMs,
-    'formula':      formula,
-    'answer':       answer,
-    'isSynced':     isSynced ? 1 : 0,
+    'id':              id,
+    'packageName':     packageName,
+    'appName':         appName,
+    'timestamp':       timestamp,
+    'success':         success ? 1 : 0,
+    'attempts':        attempts,
+    'durationMs':      durationMs,
+    'formula':         formula,
+    'answer':          answer,
+    'isSynced':        isSynced ? 1 : 0,
+    'sessionId':       sessionId,
+    'sessionStartMs':  sessionStartMs,
+    'sessionEndMs':    sessionEndMs,
+    'lockReason':      lockReason,
+    'forcedExit':      forcedExit ? 1 : 0,
+    'isRetry':         isRetry ? 1 : 0,
   };
 
   factory UnlockEvent.fromMap(Map<String, dynamic> m) => UnlockEvent(
-    id:          m['id'] as int?,
-    packageName: m['packageName'] as String,
-    appName:     m['appName']     as String,
-    timestamp:   m['timestamp']   as int,
-    success:     (m['success']    as int) == 1,
-    attempts:    m['attempts']    as int,
-    durationMs:  m['durationMs']  as int,
-    formula:     m['formula']     as String,
-    answer:      m['answer']      as int,
-    isSynced:    m['isSynced'] != null ? (m['isSynced'] as int) == 1 : false,
+    id:              m['id'] as int?,
+    packageName:     m['packageName'] as String,
+    appName:         m['appName']      as String,
+    timestamp:       m['timestamp']    as int,
+    success:         (m['success']     as int) == 1,
+    attempts:        m['attempts']     as int,
+    durationMs:      m['durationMs']   as int,
+    formula:         m['formula']      as String,
+    answer:          m['answer']       as int,
+    isSynced:        m['isSynced'] != null ? (m['isSynced'] as int) == 1 : false,
+    sessionId:       (m['sessionId']       as String?) ?? '',
+    sessionStartMs:  (m['sessionStartMs']  as int?)    ?? 0,
+    sessionEndMs:    (m['sessionEndMs']    as int?)    ?? 0,
+    lockReason:      (m['lockReason']      as String?) ?? 'initial',
+    forcedExit:      (m['forcedExit']      as int?) == 1,
+    isRetry:         (m['isRetry']         as int?) == 1,
   );
 }
 
@@ -83,26 +109,41 @@ class DatabaseService {
     final dbPath = join(await getDatabasesPath(), 'cobalt_fortress.db');
     return openDatabase(
       dbPath,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE unlock_events (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            packageName TEXT    NOT NULL,
-            appName     TEXT    NOT NULL,
-            timestamp   INTEGER NOT NULL,
-            success     INTEGER NOT NULL DEFAULT 1,
-            attempts    INTEGER NOT NULL DEFAULT 1,
-            durationMs  INTEGER NOT NULL DEFAULT 0,
-            formula     TEXT    NOT NULL DEFAULT '',
-            answer      INTEGER NOT NULL DEFAULT 0,
-            isSynced    INTEGER NOT NULL DEFAULT 0
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            packageName     TEXT    NOT NULL,
+            appName         TEXT    NOT NULL,
+            timestamp       INTEGER NOT NULL,
+            success         INTEGER NOT NULL DEFAULT 1,
+            attempts        INTEGER NOT NULL DEFAULT 1,
+            durationMs      INTEGER NOT NULL DEFAULT 0,
+            formula         TEXT    NOT NULL DEFAULT '',
+            answer          INTEGER NOT NULL DEFAULT 0,
+            isSynced        INTEGER NOT NULL DEFAULT 0,
+            sessionId       TEXT    NOT NULL DEFAULT '',
+            sessionStartMs  INTEGER NOT NULL DEFAULT 0,
+            sessionEndMs    INTEGER NOT NULL DEFAULT 0,
+            lockReason      TEXT    NOT NULL DEFAULT 'initial',
+            forcedExit      INTEGER NOT NULL DEFAULT 0,
+            isRetry         INTEGER NOT NULL DEFAULT 0
           )
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE unlock_events ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0');
+        }
+        // v3: intra-session cognitive friction (M2 re-lock + M4 forced-exit/retry)
+        if (oldVersion < 3) {
+          await db.execute("ALTER TABLE unlock_events ADD COLUMN sessionId      TEXT   NOT NULL DEFAULT ''");
+          await db.execute('ALTER TABLE unlock_events ADD COLUMN sessionStartMs INTEGER NOT NULL DEFAULT 0');
+          await db.execute('ALTER TABLE unlock_events ADD COLUMN sessionEndMs   INTEGER NOT NULL DEFAULT 0');
+          await db.execute("ALTER TABLE unlock_events ADD COLUMN lockReason     TEXT   NOT NULL DEFAULT 'initial'");
+          await db.execute('ALTER TABLE unlock_events ADD COLUMN forcedExit     INTEGER NOT NULL DEFAULT 0');
+          await db.execute('ALTER TABLE unlock_events ADD COLUMN isRetry        INTEGER NOT NULL DEFAULT 0');
         }
       },
     );

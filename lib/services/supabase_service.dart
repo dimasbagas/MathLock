@@ -134,6 +134,13 @@ class AuthService {
       'duration_ms': e.durationMs,
       'formula': e.formula,
       'answer': e.answer,
+      // M2/M4: intra-session cognitive friction fields
+      'session_id': e.sessionId,
+      'session_start_ms': e.sessionStartMs,
+      'session_end_ms': e.sessionEndMs,
+      'lock_reason': e.lockReason,
+      'forced_exit': e.forcedExit,
+      'is_retry': e.isRetry,
     }).toList();
 
     await client.from('unlock_events').upsert(

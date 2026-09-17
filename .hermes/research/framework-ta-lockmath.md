@@ -27,7 +27,7 @@
 | Lapis | Teori | Sumber kunci | Peran di LockMath |
 |---|---|---|---|
 | Psikologis | **Dual-process / inhibitory control**: perilaku scroll = proses otomatis (System 1); interupsi yang menuntut effort mengaktifkan System 2 | Johannes et al. (2021), *J Experimental Psychology: General* | Soal aritmatika = pengungkit System 2 |
-| Desain intervensi | **Just-in-Time Adaptive Interventions (JITAIs)**: interupsi pada *moment* yang tepat dengan *dosis* yang tepat | Nahum-Shani et al. (2017), *Annals of Behavioral Medicine* | Re-lock 30 menit = JITAI dengan trigger berbasis durasi |
+| Desain intervensi | **Just-in-Time Adaptive Interventions (JITAIs)**: interupsi pada *moment* yang tepat dengan *dosis* yang tepat | Nahum-Shani et al. (2017), *Annals of Behavioral Medicine* | Re-lock 15 menit (konstanta) = JITAI dengan trigger berbasis durasi |
 | Ekonomi perilaku | **Response effort / friction**: menambah biaya kecil pada perilaku otomatis menurunkan frekuensinya secara signifikan | Grüning et al. (2023) *PNAS* (one sec); Radtke et al. (2021) *MM&C* | Eskalasi durasi + forced-exit = friksi yang naik bertahap |
 
 ## 4. KERANGKA KONSEPTUAL (bagan — salin ke draw.io)
