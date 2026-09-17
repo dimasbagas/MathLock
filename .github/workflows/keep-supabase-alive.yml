@@ -29,7 +29,7 @@ jobs:
           for i in 1 2 3; do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" \
               -H "apikey: $SUPABASE_ANON_KEY" \
-              "$SUPABASE_URL/rest/v1/")
+              "$SUPABASE_URL/health")
             echo "Attempt $i -> HTTP $CODE"
             if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 300 ]; then
               echo "OK: Supabase merespons, project tetap aktif."
