@@ -1,5 +1,6 @@
 package com.danibaret014.mathlock
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -136,6 +137,27 @@ class AppLockService : Service() {
         unregisterReceiver(lockResultReceiver)
         executor.shutdownNow()
         super.onDestroy()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_MASTER_LOCK, false)) {
+            val restartServiceIntent = Intent(applicationContext, AppLockService::class.java).apply {
+                setPackage(packageName)
+            }
+            val restartServicePendingIntent = PendingIntent.getService(
+                applicationContext, 1, restartServiceIntent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            alarmManager?.set(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 1000,
+                restartServicePendingIntent
+            )
+            android.util.Log.d("AppLockService", "Task removed, scheduled service restart in 1s.")
+        }
+        super.onTaskRemoved(rootIntent)
     }
 
     // ── Core polling logic ───────────────────────────────────────────────────

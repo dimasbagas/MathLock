@@ -23,8 +23,8 @@ class PermissionWizard extends StatefulWidget {
 
 class _PermissionWizardState extends State<PermissionWizard>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  int  _step         = 0; // 0 = usage access, 1 = overlay, 2 = done
-  bool _isChecking     = false;
+  int  _step         = 0; // 0 = usage access, 1 = overlay, 2 = battery, 3 = done
+  bool _isChecking   = false;
 
   late AnimationController _anim;
   late Animation<double>   _fade;
@@ -62,11 +62,14 @@ class _PermissionWizardState extends State<PermissionWizard>
 
     final usage   = await widget.nativeService.checkUsagePermission();
     final overlay = await widget.nativeService.checkOverlayPermission();
+    final battery = await widget.nativeService.checkBatteryOptimizationPermission();
 
     if (!mounted) return;
     setState(() {
       _isChecking = false;
-      if (usage && overlay) {
+      if (usage && overlay && battery) {
+        _step = 3;
+      } else if (usage && overlay && !battery) {
         _step = 2;
       } else if (usage && !overlay) {
         _step = 1;
@@ -75,7 +78,7 @@ class _PermissionWizardState extends State<PermissionWizard>
       }
     });
 
-    if (usage && overlay) {
+    if (usage && overlay && battery) {
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) widget.onComplete();
     }
@@ -200,7 +203,9 @@ class _PermissionWizardState extends State<PermissionWizard>
         _stepConnector(theme, 0),
         _stepDot(theme, 1, 'Display\nOver Apps', Icons.layers_rounded),
         _stepConnector(theme, 1),
-        _stepDot(theme, 2, 'Selesai', Icons.check_circle_rounded),
+        _stepDot(theme, 2, 'Baterai\nLatar', Icons.battery_saver_rounded),
+        _stepConnector(theme, 2),
+        _stepDot(theme, 3, 'Selesai', Icons.check_circle_rounded),
       ],
     );
   }
@@ -217,7 +222,7 @@ class _PermissionWizardState extends State<PermissionWizard>
     return Column(children: [
       AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        width: 48, height: 48,
+        width: 44, height: 44,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color.withValues(alpha: isActive ? 0.15 : isDone ? 0.1 : 0.05),
@@ -228,15 +233,15 @@ class _PermissionWizardState extends State<PermissionWizard>
         ),
         child: Icon(
           isDone ? Icons.check_rounded : icon,
-          color: color, size: 22,
+          color: color, size: 20,
         ),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 6),
       Text(
         label,
         style: theme.textTheme.labelSmall?.copyWith(
-          color: color, fontSize: 9, fontWeight: FontWeight.bold,
-          letterSpacing: 0.5, height: 1.3,
+          color: color, fontSize: 8, fontWeight: FontWeight.bold,
+          letterSpacing: 0.5, height: 1.2,
         ),
         textAlign: TextAlign.center,
       ),
@@ -249,7 +254,7 @@ class _PermissionWizardState extends State<PermissionWizard>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         height: 2,
-        margin: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
+        margin: const EdgeInsets.only(bottom: 24, left: 4, right: 4),
         decoration: BoxDecoration(
           color: filled
               ? theme.colorScheme.tertiary
@@ -268,7 +273,7 @@ class _PermissionWizardState extends State<PermissionWizard>
           icon: Icons.query_stats_rounded,
           iconColor: theme.colorScheme.primary,
           title: 'Usage Access',
-          subtitle: 'Izin Langkah 1 dari 2',
+          subtitle: 'Izin Langkah 1 dari 3',
           description:
               'Izin ini memungkinkan Cobalt Fortress mendeteksi aplikasi mana yang sedang dibuka, '
               'sehingga layar kunci matematika dapat ditampilkan tepat waktu.',
@@ -285,7 +290,7 @@ class _PermissionWizardState extends State<PermissionWizard>
           icon: Icons.layers_rounded,
           iconColor: theme.colorScheme.tertiary,
           title: 'Display Over Apps',
-          subtitle: 'Izin Langkah 2 dari 2',
+          subtitle: 'Izin Langkah 2 dari 3',
           description:
               'Izin ini diperlukan agar layar kunci dapat tampil di atas aplikasi lain '
               'ketika aplikasi yang dikunci sedang dibuka oleh pengguna.',
@@ -295,7 +300,22 @@ class _PermissionWizardState extends State<PermissionWizard>
             'Kembali ke aplikasi ini',
           ],
         );
-      default: // step == 2: all granted
+      case 2:
+        return _buildPermissionCard(
+          theme,
+          icon: Icons.battery_saver_rounded,
+          iconColor: theme.colorScheme.secondary,
+          title: 'Optimasi Baterai Latar',
+          subtitle: 'Izin Langkah 3 dari 3',
+          description:
+              'Agar proteksi aplikasi tidak dimatikan paksa oleh Android saat aplikasi MathLock ditutup atau di-swipe dari Recent Apps, izinkan pengabaian optimasi baterai.',
+          steps: const [
+            'Ketuk tombol di bawah untuk membuka dialog Android',
+            'Pilih "Izinkan" / "Allow" agar layanan pengunci tetap aktif',
+            'Kembali ke aplikasi ini',
+          ],
+        );
+      default: // step == 3: all granted
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -397,19 +417,29 @@ class _PermissionWizardState extends State<PermissionWizard>
   }
 
   Widget _buildActionButton(ThemeData theme) {
-    if (_step == 2) return const SizedBox.shrink();
+    if (_step == 3) return const SizedBox.shrink();
 
-    final isUsageStep = _step == 0;
-    final color = isUsageStep ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+    String btnText = 'BUKA PENGATURAN USAGE ACCESS';
+    Color color = theme.colorScheme.primary;
+
+    if (_step == 1) {
+      btnText = 'BUKA PENGATURAN DISPLAY OVER APPS';
+      color = theme.colorScheme.tertiary;
+    } else if (_step == 2) {
+      btnText = 'IZINKAN OPTIMASI BATERAI LATAR';
+      color = theme.colorScheme.secondary;
+    }
 
     return GestureDetector(
       onTap: _isChecking
           ? null
           : () async {
-              if (isUsageStep) {
+              if (_step == 0) {
                 await widget.nativeService.requestUsagePermission();
-              } else {
+              } else if (_step == 1) {
                 await widget.nativeService.requestOverlayPermission();
+              } else if (_step == 2) {
+                await widget.nativeService.requestBatteryOptimizationPermission();
               }
             },
       child: AnimatedContainer(
@@ -429,7 +459,7 @@ class _PermissionWizardState extends State<PermissionWizard>
             const Icon(Icons.open_in_new_rounded, color: Colors.white, size: 20),
             const SizedBox(width: 10),
             Text(
-              isUsageStep ? 'BUKA PENGATURAN USAGE ACCESS' : 'BUKA PENGATURAN DISPLAY OVER APPS',
+              btnText,
               style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.w900,
                 fontSize: 12, letterSpacing: 1.5,

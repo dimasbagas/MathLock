@@ -46,7 +46,13 @@ class AppLockNativeService {
   Future<bool> checkOverlayPermission() async =>
       (await _invoke<bool>('checkOverlayPermission')) ?? false;
 
+  Future<bool> checkBatteryOptimizationPermission() async =>
+      (await _invoke<bool>('checkBatteryOptimizationPermission')) ?? false;
+
   Future<void> requestUsagePermission() => _invoke('requestUsagePermission');
 
   Future<void> requestOverlayPermission() => _invoke('requestOverlayPermission');
+
+  Future<void> requestBatteryOptimizationPermission() =>
+      _invoke('requestBatteryOptimizationPermission');
 }

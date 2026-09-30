@@ -141,6 +141,7 @@ class AuthService {
       'lock_reason': e.lockReason,
       'forced_exit': e.forcedExit,
       'is_retry': e.isRetry,
+      'relock_interval_minutes': e.relockIntervalMinutes,
     }).toList();
 
     await client.from('unlock_events').upsert(

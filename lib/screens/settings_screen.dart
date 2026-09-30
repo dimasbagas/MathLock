@@ -18,9 +18,39 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   final AuthService _authService = AuthService();
   bool _isSyncing = false;
+  bool _isBatteryOptimized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkBatteryOptimization();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBatteryOptimization();
+    }
+  }
+
+  Future<void> _checkBatteryOptimization() async {
+    final isGranted = await widget.appState.nativeService.checkBatteryOptimizationPermission();
+    if (mounted) {
+      setState(() {
+        _isBatteryOptimized = isGranted;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -370,6 +400,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: () async {
+            await widget.appState.nativeService.requestBatteryOptimizationPermission();
+            _checkBatteryOptimization();
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isBatteryOptimized
+                    ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                    : theme.colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isBatteryOptimized ? Icons.battery_charging_full_rounded : Icons.battery_saver_rounded,
+                  color: _isBatteryOptimized ? const Color(0xFF10B981) : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text('OPTIMASI BATERAI (ANTI-KILL)', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                          if (_isBatteryOptimized) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'DIIZINKAN',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: const Color(0xFF10B981),
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isBatteryOptimized
+                            ? 'Latar belakang aktif tanpa pembatasan baterai (App lock terlindungi)'
+                            : 'Izinkan background tanpa pembatasan agar app lock tidak mati',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: _isBatteryOptimized ? const Color(0xFF10B981) : theme.colorScheme.onSurfaceVariant,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _isBatteryOptimized ? Icons.check_circle_rounded : Icons.open_in_new_rounded,
+                  color: _isBatteryOptimized ? const Color(0xFF10B981) : theme.colorScheme.onSurfaceVariant,
+                  size: _isBatteryOptimized ? 18 : 16,
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         InkWell(

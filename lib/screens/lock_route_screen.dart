@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'math_lock_screen.dart';
 import '../services/database_service.dart';
+import '../services/preferences_service.dart';
 import '../state/app_state.dart';
 
 /// Flutter screen rendered inside [LockActivity].
@@ -59,19 +60,21 @@ class _LockRouteScreenState extends State<LockRouteScreen> {
   /// M2: catat sesi yang berakhir karena user keluar/force-exit (retry detection).
   Future<void> _onSessionEnded({bool forced = false}) async {
     final now = DateTime.now().millisecondsSinceEpoch;
+    final relockInterval = await PreferencesService().getRelockInterval();
     await DatabaseService().insertEvent(UnlockEvent(
-      packageName:    _packageName,
-      appName:        _appName,
-      timestamp:      now,
-      success:        false,
-      attempts:       0,
-      durationMs:     0,
-      formula:        '',
-      answer:         0,
-      sessionId:      _sessionId,
-      sessionEndMs:   now,
-      forcedExit:     forced,
-      lockReason:     forced ? 'forced_exit' : 'screen_off',
+      packageName:           _packageName,
+      appName:               _appName,
+      timestamp:             now,
+      success:               false,
+      attempts:              0,
+      durationMs:            0,
+      formula:               '',
+      answer:                0,
+      sessionId:             _sessionId,
+      sessionEndMs:          now,
+      forcedExit:            forced,
+      lockReason:            forced ? 'forced_exit' : 'screen_off',
+      relockIntervalMinutes: relockInterval,
     ));
   }
 

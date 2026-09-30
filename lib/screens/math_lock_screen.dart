@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/database_service.dart';
+import '../services/preferences_service.dart';
 import '../state/app_state.dart';
 import '../widgets/mock_ad_banner.dart';
 import '../widgets/ambient_glow.dart';
@@ -230,19 +231,21 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
     }
   }
 
-  void _handleLockout() {
+  Future<void> _handleLockout() async {
+    final relockInterval = await PreferencesService().getRelockInterval();
     // Simpan event gagal ke database — M4: forced-exit + retry detection
-    DatabaseService().insertEvent(UnlockEvent(
-      packageName:     widget.packageName,
-      appName:         widget.appName,
-      timestamp:       DateTime.now().millisecondsSinceEpoch,
-      success:         false,
-      attempts:        _attempts,
-      durationMs:      DateTime.now().millisecondsSinceEpoch - _startTimeMs,
-      formula:         _question['question'] as String,
-      answer:          _question['answer']   as int,
-      forcedExit:      true,
-      sessionEndMs:    DateTime.now().millisecondsSinceEpoch,
+    await DatabaseService().insertEvent(UnlockEvent(
+      packageName:           widget.packageName,
+      appName:               widget.appName,
+      timestamp:             DateTime.now().millisecondsSinceEpoch,
+      success:               false,
+      attempts:              _attempts,
+      durationMs:            DateTime.now().millisecondsSinceEpoch - _startTimeMs,
+      formula:               _question['question'] as String,
+      answer:                _question['answer']   as int,
+      forcedExit:            true,
+      sessionEndMs:          DateTime.now().millisecondsSinceEpoch,
+      relockIntervalMinutes: relockInterval,
     ));
 
     if (widget.onDismiss != null) {
@@ -283,23 +286,25 @@ class _MathLockScreenState extends State<MathLockScreen> with SingleTickerProvid
     });
   }
 
-  void _onSubmit() {
+  Future<void> _onSubmit() async {
     if (_input.isEmpty || _isSuccess) return;
     _attempts++;
     final userAnswer = int.tryParse(_input);
     if (userAnswer == _question['answer']) {
       _countdownTimer?.cancel();
       setState(() => _isSuccess = true);
+      final relockInterval = await PreferencesService().getRelockInterval();
       // Simpan event sukses ke database
-      DatabaseService().insertEvent(UnlockEvent(
-        packageName:     widget.packageName,
-        appName:         widget.appName,
-        timestamp:       DateTime.now().millisecondsSinceEpoch,
-        success:         true,
-        attempts:        _attempts,
-        durationMs:      DateTime.now().millisecondsSinceEpoch - _startTimeMs,
-        formula:         _question['question'] as String,
-        answer:          _question['answer']   as int,
+      await DatabaseService().insertEvent(UnlockEvent(
+        packageName:           widget.packageName,
+        appName:               widget.appName,
+        timestamp:             DateTime.now().millisecondsSinceEpoch,
+        success:               true,
+        attempts:              _attempts,
+        durationMs:            DateTime.now().millisecondsSinceEpoch - _startTimeMs,
+        formula:               _question['question'] as String,
+        answer:                _question['answer']   as int,
+        relockIntervalMinutes: relockInterval,
       ));
       Future.delayed(const Duration(milliseconds: 600), () {
         AdService.instance.showAdWithCallback(() {

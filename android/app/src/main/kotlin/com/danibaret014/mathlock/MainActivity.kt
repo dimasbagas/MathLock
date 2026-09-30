@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
@@ -93,6 +94,7 @@ class MainActivity : FlutterActivity() {
                     // ── Permission checks ─────────────────────────────────────
                     "checkUsagePermission"   -> result.success(hasUsageStatsPermission())
                     "checkOverlayPermission" -> result.success(hasOverlayPermission())
+                    "checkBatteryOptimizationPermission" -> result.success(isIgnoringBatteryOptimizations())
 
                     "requestUsagePermission" -> {
                         startActivity(
@@ -115,9 +117,39 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
 
+                    "requestBatteryOptimizationPermission" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            try {
+                                startActivity(
+                                    Intent(
+                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        Uri.parse("package:$packageName")
+                                    ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+                                )
+                            } catch (e: Exception) {
+                                startActivity(
+                                    Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                )
+                            }
+                        }
+                        result.success(null)
+                    }
+
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    // ── Permission helpers ────────────────────────────────────────────────────
+
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            return pm.isIgnoringBatteryOptimizations(packageName)
+        }
+        return true
     }
 
     // ── Permission helpers ────────────────────────────────────────────────────
