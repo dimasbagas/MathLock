@@ -941,6 +941,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         premiumExpiry: appState.premiumExpiry,
         lockedPackages: lockedPackages,
       );
+      appState.markSettingsSynced();
 
       // 2. Sync local SQLite database events (hanya data baru yang belum tersinkronisasi)
       final dbService = DatabaseService();

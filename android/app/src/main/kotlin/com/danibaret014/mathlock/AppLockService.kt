@@ -14,6 +14,7 @@ import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -89,6 +90,69 @@ class AppLockService : Service() {
         const val POLL_INTERVAL_MS   = 500L
         const val SESSION_LIMIT_MS   = 15 * 60 * 1000L  // M2: re-lock tiap 15 menit pemakaian
         const val ACTION_SESSION_ARM = "com.danibaret014.mathlock.SESSION_ARM"
+
+        // Watchdog: alarm satu-kali yang dijadwalkan ulang setiap kali service
+        // berjalan. Tidak memakai exact alarm, jadi tidak butuh izin khusus.
+        const val ACTION_RESTART = "com.danibaret014.mathlock.ACTION_RESTART"
+        const val ACTION_WATCHDOG = "com.danibaret014.mathlock.ACTION_WATCHDOG"
+        const val WATCHDOG_REQUEST_CODE = 2001
+        const val TASK_REMOVED_RESTART_REQUEST_CODE = 2002
+        const val WATCHDOG_INTERVAL_MS = 15 * 60 * 1000L
+
+        /**
+         * Jadwalkan watchdog berikutnya. Memakai setAndAllowWhileIdle agar
+         * alarm tetap dicoba saat perangkat masuk Doze.
+         */
+        fun scheduleWatchdog(context: Context) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            if (!prefs.getBoolean(KEY_MASTER_LOCK, false)) return
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return
+            val intent = Intent(context, ServiceRestartReceiver::class.java).apply {
+                action = ACTION_WATCHDOG
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                WATCHDOG_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val triggerAt = SystemClock.elapsedRealtime() + WATCHDOG_INTERVAL_MS
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAt,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.set(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAt,
+                        pendingIntent
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AppLockService", "Gagal menjadwalkan watchdog", e)
+            }
+        }
+
+        fun cancelWatchdog(context: Context) {
+            val intent = Intent(context, ServiceRestartReceiver::class.java).apply {
+                action = ACTION_WATCHDOG
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                WATCHDOG_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            ) ?: return
+            (context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager)
+                ?.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -97,11 +161,19 @@ class AppLockService : Service() {
         super.onCreate()
         createNotificationChannel()
         val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID, notification,
+
+        // Android 15+ membatasi dataSync dari BOOT_COMPLETED dan memberi
+        // timeout 6 jam. Service ini adalah pemantau app-lock yang berjalan
+        // terus-menerus, jadi gunakan specialUse pada Android 14+.
+        val foregroundServiceType = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
+            else -> 0
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notification, foregroundServiceType)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -127,37 +199,74 @@ class AppLockService : Service() {
                 ::checkForegroundApp, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS
             )
         }
+        // Jadwalkan ulang watchdog setiap service menerima start, termasuk
+        // saat START_STICKY menghidupkan service dengan intent null.
+        scheduleWatchdog(this)
         return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        unregisterReceiver(screenReceiver)
-        unregisterReceiver(lockResultReceiver)
+        try {
+            unregisterReceiver(screenReceiver)
+        } catch (_: IllegalArgumentException) {
+            // Receiver sudah tidak terdaftar; aman diabaikan.
+        }
+        try {
+            unregisterReceiver(lockResultReceiver)
+        } catch (_: IllegalArgumentException) {
+            // Receiver sudah tidak terdaftar; aman diabaikan.
+        }
         executor.shutdownNow()
+
+        // Jika user mematikan master lock, hentikan watchdog. Jika service
+        // dihentikan sistem, alarm tetap hidup sebagai jalur restart.
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(KEY_MASTER_LOCK, false)) {
+            cancelWatchdog(this)
+        }
         super.onDestroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getBoolean(KEY_MASTER_LOCK, false)) {
-            val restartServiceIntent = Intent(applicationContext, AppLockService::class.java).apply {
-                setPackage(packageName)
-            }
-            val restartServicePendingIntent = PendingIntent.getService(
-                applicationContext, 1, restartServiceIntent,
-                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            scheduleImmediateRestart()
+            scheduleWatchdog(this)
+            android.util.Log.d(
+                "AppLockService",
+                "Task removed; immediate restart + watchdog dijadwalkan."
             )
-            val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
+    /**
+     * Minta ServiceRestartReceiver menghidupkan ulang service 1 detik lagi.
+     * Memakai broadcast + startForegroundService, bukan PendingIntent.getService,
+     * agar memenuhi aturan foreground service Android 8+.
+     */
+    private fun scheduleImmediateRestart() {
+        val restartIntent = Intent(applicationContext, ServiceRestartReceiver::class.java).apply {
+            action = ACTION_RESTART
+        }
+        val restartPendingIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            TASK_REMOVED_RESTART_REQUEST_CODE,
+            restartIntent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        try {
             alarmManager?.set(
                 AlarmManager.RTC_WAKEUP,
                 System.currentTimeMillis() + 1000,
-                restartServicePendingIntent
+                restartPendingIntent
             )
-            android.util.Log.d("AppLockService", "Task removed, scheduled service restart in 1s.")
+        } catch (e: Exception) {
+            android.util.Log.e("AppLockService", "Gagal menjadwalkan restart task-removed", e)
         }
-        super.onTaskRemoved(rootIntent)
     }
 
     // ── Core polling logic ───────────────────────────────────────────────────

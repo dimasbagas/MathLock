@@ -312,6 +312,7 @@ class _PermissionWizardState extends State<PermissionWizard>
           steps: const [
             'Ketuk tombol di bawah untuk membuka dialog Android',
             'Pilih "Izinkan" / "Allow" agar layanan pengunci tetap aktif',
+            'Di HP Xiaomi/Oppo/Vivo, buka pengaturan aplikasi lalu aktifkan Autostart / Auto-start untuk MathLock',
             'Kembali ke aplikasi ini',
           ],
         );

@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="com.android.vending.BILLING"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
@@ -52,10 +53,24 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"/>
 
-        <!-- Background service that monitors foreground app and triggers lock -->
+        <!-- Background service that monitors foreground app and triggers lock.
+             dataSync dipakai di Android 9-13; specialUse dipakai di Android 14+
+             karena layanan ini berjalan terus-menerus (bukan transfer data). -->
         <service
             android:name=".AppLockService"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="dataSync|specialUse"
+            android:stopWithTask="false"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="app_lock_monitoring"/>
+        </service>
+
+        <!-- Watchdog/restart receiver. Dipicu oleh AlarmManager, bukan intent
+             dari aplikasi lain, sehingga tidak perlu diekspor. -->
+        <receiver
+            android:name=".ServiceRestartReceiver"
+            android:enabled="true"
             android:exported="false"/>
 
         <!-- Boot receiver for auto-starting AppLockService after restart -->
@@ -67,6 +82,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
 

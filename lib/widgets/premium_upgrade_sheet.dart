@@ -193,6 +193,7 @@ class _PremiumUpgradeSheetState extends State<PremiumUpgradeSheet> {
                 premiumExpiry: widget.appState.premiumExpiry,
                 lockedPackages: lockedPackages,
               );
+              widget.appState.markSettingsSynced();
             } catch (e) {
               debugPrint('Error syncing settings to Supabase after purchase: $e');
             }
@@ -295,6 +296,7 @@ class _PremiumUpgradeSheetState extends State<PremiumUpgradeSheet> {
           premiumExpiry: widget.appState.premiumExpiry,
           lockedPackages: lockedPackages,
         );
+        widget.appState.markSettingsSynced();
       } catch (e) {
         debugPrint('Error syncing settings to Supabase after mock purchase: $e');
       }

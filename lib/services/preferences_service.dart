@@ -72,6 +72,7 @@ class PreferencesService {
   static const _keyLockedPackages = 'individually_locked_packages';
   static const _keyIsPremium = 'is_premium';
   static const _keyPremiumExpiry = 'premium_expiry';
+  static const _keySettingsUpdatedAt = 'settings_updated_at';
 
   Future<Set<String>> getLockedPackages() async {
     final list = (await _p).getStringList(_keyLockedPackages) ?? [];
@@ -92,4 +93,15 @@ class PreferencesService {
 
   Future<void> setPremiumExpiry(int value) async =>
       (await _p).setInt(_keyPremiumExpiry, value);
+
+  // ── Sync conflict marker ───────────────────────────────────────────────────
+  // Epoch ms perubahan setting terakhir di perangkat ini. Dipakai untuk
+  // membandingkan dengan `updated_at` dari Supabase agar perubahan lokal
+  // tidak ditimpa data cloud yang lebih lama.
+
+  Future<int> getSettingsUpdatedAt() async =>
+      (await _p).getInt(_keySettingsUpdatedAt) ?? 0;
+
+  Future<void> setSettingsUpdatedAt(int value) async =>
+      (await _p).setInt(_keySettingsUpdatedAt, value);
 }
