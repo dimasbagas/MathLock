@@ -162,18 +162,15 @@ class AppLockService : Service() {
         createNotificationChannel()
         val notification = buildNotification()
 
-        // Android 15+ membatasi dataSync dari BOOT_COMPLETED dan memberi
-        // timeout 6 jam. Service ini adalah pemantau app-lock yang berjalan
-        // terus-menerus, jadi gunakan specialUse pada Android 14+.
-        val foregroundServiceType = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+        // Android 14+ mewajibkan tipe FGS. Gunakan specialUse karena service
+        // ini memantau app-lock secara terus-menerus, bukan transfer data.
+        // Android 9-13 tidak memakai tipe agar tidak perlu deklarasi dataSync.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            else -> 0
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, foregroundServiceType)
+            )
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
